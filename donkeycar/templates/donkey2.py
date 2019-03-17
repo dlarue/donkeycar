@@ -23,9 +23,7 @@ from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 from donkeycar.parts.datastore import TubGroup, TubWriter
 from donkeycar.parts.web_controller import LocalWebController
 from donkeycar.parts.clock import Timestamp
-from donkeycar.parts.datastore import TubGroup, TubWriter
-from donkeycar.parts.keras import KerasLinear
-from donkeycar.parts.transform import Lambda
+
 
 
 def drive(cfg, model_path=None, use_chaos=False):
@@ -141,6 +139,7 @@ def train(cfg, tub_names, new_model_path, base_model_path=None):
     if base_model_path is not None:
         base_model_path = os.path.expanduser(base_model_path)
         kl.load(base_model_path)
+    kl.model.summary()
 
     print('tub_names', tub_names)
     if not tub_names:
