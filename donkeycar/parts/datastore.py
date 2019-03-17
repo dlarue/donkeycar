@@ -141,9 +141,8 @@ class Tub(object):
     def make_record_paths_absolute(self, record_dict):
         d = {}
         for k, v in record_dict.items():
-            if type(v) == str:  # filename
-                if '.' in v:
-                    v = os.path.join(self.path, v)
+            get_input_type(k) == 'image_array': # path to jpg file
+                v = os.path.join(self.path, v)
             d[k] = v
 
         return d

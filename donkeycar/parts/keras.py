@@ -5,12 +5,15 @@ keras.py
 functions to run and train autopilots using keras
 
 """
-
-from tensorflow.python.keras.layers import Input
-from tensorflow.python.keras.models import Model, load_model
-from tensorflow.python.keras.layers import Convolution2D
-from tensorflow.python.keras.layers import Dropout, Flatten, Dense
-from tensorflow.python.keras.callbacks import ModelCheckpoint, EarlyStopping
+# run these 2 lines to use plaidml as backend for gpu
+# import plaidml.keras
+# plaidml.keras.install_backend()
+# ---------------------------------------------------
+from keras.layers import Input
+from keras.models import Model, load_model
+from keras.layers import Convolution2D
+from keras.layers import Dropout, Flatten, Dense
+from keras.callbacks import ModelCheckpoint, EarlyStopping
 
 
 class KerasPilot:
@@ -23,7 +26,7 @@ class KerasPilot:
 
     def train(self, train_gen, val_gen,
               saved_model_path, epochs=100, steps=100, train_split=0.8,
-              verbose=1, min_delta=.0005, patience=5, use_early_stop=True):
+              verbose=1, min_delta=.0005, patience=15, use_early_stop=True):
         """
         train_gen: generator that yields an array of images an array of
 
