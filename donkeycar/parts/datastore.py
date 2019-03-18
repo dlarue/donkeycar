@@ -220,13 +220,16 @@ class Tub(object):
             with open(path, 'r') as fp:
                 json_data = json.load(fp)
         except UnicodeDecodeError:
-            raise Exception('bad record: %d. You may want to run `python manage.py check --fix`' % ix)
+            raise Exception('bad record: %d. You may want to run `donkey tubcheck --fix`' % ix)
         except FileNotFoundError:
             raise
         except:
             logger.error('Unexpected error: {}'.format(sys.exc_info()[0]))
             raise
-
+        # if record is not type user
+        if json_data["user/mode"] != "user":
+            raise Exception('bad record: %d. "user/mode" should be "user" for recorded data. \
+                            You may want to run `donkey tubcheck --fix`' % ix)
         record_dict = self.make_record_paths_absolute(json_data)
         return record_dict
 
