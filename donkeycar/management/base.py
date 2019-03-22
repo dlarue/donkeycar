@@ -257,7 +257,7 @@ class Sim(BaseCommand):
         """
         import socketio
         from donkeycar.parts.simulation import SteeringServer
-        from donkeycar.parts.keras import KerasCategorical, KerasLinear
+        from donkeycar.parts.keras import KerasLinear
 
         args, parser = self.parse_args(args)
 
@@ -381,16 +381,18 @@ class ShowPredictionPlots(BaseCommand):
         Plot model predictions for angle and throttle against data from tubs.
 
         """
+        import pandas as pd
+        import matplotlib.pyplot as plt
         from donkeycar.parts.datastore import TubGroup
-        from donkeycar.parts.keras import KerasCategorical
+        from donkeycar.parts.keras import KerasLinear
 
         tg = TubGroup(tub_paths)
 
         model_path = os.path.expanduser(model_path)
-        model = KerasCategorical()
+        model = KerasLinear()
         model.load(model_path)
 
-        gen = tg.get_batch_gen(None, None, batch_size=len(tg.df),shuffle=False, df=tg.df)
+        gen = tg.get_batch_gen(None, batch_size=len(tg.df), shuffle=False, df=tg.df)
         arr = next(gen)
 
         user_angles = []

@@ -292,11 +292,11 @@ class Tub(object):
             df = self.get_df()
 
         while True:
-            for _ in self.df.iterrows():
+            for index, rows in self.df.iterrows():
                 if shuffle:
                     record_dict = df.sample(n=1).to_dict(orient='record')[0]
 
-                record_dict = self.read_record(record_dict)
+                record_dict = self.read_record(rows)
 
                 if record_transform:
                     record_dict = record_transform(record_dict)

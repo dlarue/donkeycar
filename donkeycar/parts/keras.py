@@ -109,5 +109,6 @@ def default_linear():
                   loss={'angle_out': 'mean_squared_error',
                         'throttle_out': 'mean_squared_error'},
                   loss_weights={'angle_out': 0.5, 'throttle_out': .5})
+    model.name = 'kl_donkey'
 
     return model
