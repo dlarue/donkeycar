@@ -140,7 +140,8 @@ def train(cfg, tub_names, new_model_path, base_model_path=None):
         base_model_path = os.path.expanduser(base_model_path)
         kl.load(base_model_path)
     kl.model.summary()
-
+    print('model_name: ' + kl.model.name)
+ 
     print('tub_names', tub_names)
     if not tub_names:
         tub_names = os.path.join(cfg.DATA_PATH, '*')
