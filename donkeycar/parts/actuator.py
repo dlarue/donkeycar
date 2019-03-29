@@ -143,7 +143,8 @@ class RCReceiver:
     """
     Class to read PWM from an RC control. Uses pigpio library.
     This is essentially a copy of (credit)
-    http://abyz.me.uk/rpi/pigpio/code/read_PWM_py.zip
+    http://abyz.me.uk/rpi/pigpio/code/read_PWM_py.zip. You will
+    need a voltage divider from a 5V RC receiver to a 3.3V Pi input pin.
 
     A class to read PWM pulses and calculate their frequency
     and duty cycle.  The frequency is how often the pulse
