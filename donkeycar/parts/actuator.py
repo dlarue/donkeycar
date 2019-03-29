@@ -138,7 +138,6 @@ class Adafruit_DCMotor_Hat:
     def shutdown(self):
         self.mh.getMotor(self.motor_num).run(Adafruit_MotorHAT.RELEASE)
 
-import pigpio
 
 class RCReceiver:
     """
@@ -163,6 +162,7 @@ class RCReceiver:
         the old reading has no effect.  This may be used to
         smooth the data.
         """
+        import pigpio
         self.pi = pi
         self.gpio = gpio
 
@@ -189,7 +189,6 @@ class RCReceiver:
             else:
                 return t
 
-
     def _cbf(self, gpio, level, tick):
         """ Callback function """
         if level == 1:
@@ -197,7 +196,6 @@ class RCReceiver:
             self._high_tick = tick
         elif level == 0:
             self._high = _update_param(self._high, tick)
-
 
     def frequency(self):
         """
@@ -243,4 +241,3 @@ class RCReceiver:
         Donkey parts interface
         """
         self.cancel()
-        
