@@ -14,7 +14,7 @@ from docopt import docopt
 import donkeycar as dk
 from donkeycar.parts.camera import PiCamera
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle, RCReceiver
-from donkeycar.parts.datastore import TubGroup, TubWriter
+from donkeycar.parts.datastore import TubGroup, TubWriter, TubHandler
 from donkeycar.parts.clock import Timestamp
 import pigpio
 
