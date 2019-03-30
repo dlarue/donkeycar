@@ -151,7 +151,8 @@ class RCReceiver:
     happens per second.  The duty cycle is the percentage of
     pulse high time per cycle.
     """
-
+    MIN_OUT = -1
+    MAX_OUT = 1
     def __init__(self, pi, gpio, weighting=0.0):
         """
         Instantiate with the Pi and gpio of the PWM signal
@@ -233,9 +234,12 @@ class RCReceiver:
 
     def run(self):
         """
-        Donkey parts interface, returns pulse width in micro sec
+        Donkey parts interface, returns pulse mapped into [MIN_OUT,MAX_OUT]
         """
-        return self.pulse_width()
+        pulse = (self.pulse_width() - self._min_pwm) / (self._max_pwm - self._min_pwm) \
+            * (self.MAX_OUT - self.MIN_OUT) + self.MIN_OUT
+
+        return
 
     def shutdown(self):
         """
