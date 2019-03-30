@@ -178,6 +178,9 @@ class RCReceiver:
         self._high_tick = None
         self._period = None
         self._high = None
+        self._min_pwm = 1000
+        self._max_pwm = 2000
+
 
         pi.set_mode(self.gpio, pigpio.INPUT)
         self._cb = pi.callback(self.gpio, pigpio.EITHER_EDGE, self._cbf)
