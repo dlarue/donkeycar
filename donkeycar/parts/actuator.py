@@ -6,6 +6,7 @@ are wrapped in a mixer class before being used in the drive loop.
 
 import time
 import donkeycar as dk
+import pigpio
 
 
 class PCA9685:
@@ -164,7 +165,6 @@ class RCReceiver:
         the old reading has no effect.  This may be used to
         smooth the data.
         """
-        import pigpio
         self.pi = pi
         self.gpio = gpio
 
