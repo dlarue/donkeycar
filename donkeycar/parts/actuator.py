@@ -197,10 +197,10 @@ class RCReceiver:
     def _cbf(self, gpio, level, tick):
         """ Callback function """
         if level == 1:
-            self._period = _update_param(self._period, tick)
+            self._period = self._update_param(self._period, tick)
             self._high_tick = tick
         elif level == 0:
-            self._high = _update_param(self._high, tick)
+            self._high = self._update_param(self._high, tick)
 
     def frequency(self):
         """
