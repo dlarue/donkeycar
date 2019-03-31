@@ -154,7 +154,7 @@ class RCReceiver:
     """
     MIN_OUT = -1
     MAX_OUT = 1
-    def __init__(self, pi, gpio, weighting=0.0):
+    def __init__(self, pi, gpio, weighting=0.0, invert=False):
         """
         Instantiate with the Pi and gpio of the PWM signal
         to monitor.
@@ -180,7 +180,7 @@ class RCReceiver:
         self._high = None
         self._min_pwm = 1000
         self._max_pwm = 2000
-
+        self._invert = invert
 
         pi.set_mode(self.gpio, pigpio.INPUT)
         self._cb = pi.callback(self.gpio, pigpio.EITHER_EDGE, self._cbf)
@@ -237,11 +237,15 @@ class RCReceiver:
 
     def run(self):
         """
-        Donkey parts interface, returns pulse mapped into [MIN_OUT,MAX_OUT]
+        Donkey parts interface, returns pulse mapped into [MIN_OUT,MAX_OUT] or [MAX_OUT,MIN_OUT]
         """
         pulse = (self.pulse_width() - self._min_pwm) / (self._max_pwm - self._min_pwm) \
-            * (self.MAX_OUT - self.MIN_OUT) + self.MIN_OUT
-        return pulse
+            * (self.MAX_OUT - self.MIN_OUT)
+        if not self._invert:
+            return pulse + self.MIN_OUT
+        else:
+            return -pulse + self.MAX_OUT
+
 
     def shutdown(self):
         """
@@ -249,25 +253,3 @@ class RCReceiver:
         """
         self.cancel()
 
-
-# class MockRCReceiver:
-#     """
-#     Mock of the above
-#     """
-#     MIN_OUT = -1
-#     MAX_OUT = 1
-#     def __init__(self):
-#         self._min_pwm = 1000
-#         self._max_pwm = 2000
-#
-#     def run(self):
-#         """
-#         Donkey parts interface, returns pulse mapped into [MIN_OUT,MAX_OUT]
-#         """
-#         pulse = (1400 - self._min_pwm) / (self._max_pwm - self._min_pwm) \
-#             * (self.MAX_OUT - self.MIN_OUT) + self.MIN_OUT
-#
-#         return pulse
-#
-#     def shutdown(self):
-#         pass
