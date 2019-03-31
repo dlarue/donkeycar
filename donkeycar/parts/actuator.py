@@ -241,11 +241,33 @@ class RCReceiver:
         """
         pulse = (self.pulse_width() - self._min_pwm) / (self._max_pwm - self._min_pwm) \
             * (self.MAX_OUT - self.MIN_OUT) + self.MIN_OUT
-
-        return
+        return pulse
 
     def shutdown(self):
         """
         Donkey parts interface
         """
         self.cancel()
+
+
+# class MockRCReceiver:
+#     """
+#     Mock of the above
+#     """
+#     MIN_OUT = -1
+#     MAX_OUT = 1
+#     def __init__(self):
+#         self._min_pwm = 1000
+#         self._max_pwm = 2000
+#
+#     def run(self):
+#         """
+#         Donkey parts interface, returns pulse mapped into [MIN_OUT,MAX_OUT]
+#         """
+#         pulse = (1400 - self._min_pwm) / (self._max_pwm - self._min_pwm) \
+#             * (self.MAX_OUT - self.MIN_OUT) + self.MIN_OUT
+#
+#         return pulse
+#
+#     def shutdown(self):
+#         pass
