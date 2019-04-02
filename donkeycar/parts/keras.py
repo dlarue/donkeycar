@@ -68,9 +68,9 @@ class KerasLinear(KerasPilot):
         if model:
             self.model = model
         elif num_outputs is not None:
-            self.model = default_linear()
+            self.model = default_linear(**kwargs)
         else:
-            self.model = default_linear()
+            self.model = default_linear(**kwargs)
 
     def run(self, img_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
@@ -81,8 +81,8 @@ class KerasLinear(KerasPilot):
         return steering[0][0], throttle[0][0]
 
 
-def default_linear():
-    img_in = Input(shape=(120, 160, 3), name='img_in')
+def default_linear(image_size=(120, 160)):
+    img_in = Input(shape=image_size + (3,), name='img_in')
     x = img_in
 
     # Convolution2D class name is an alias for Conv2D

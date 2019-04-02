@@ -66,7 +66,7 @@ def drive(cfg, model_path=None, use_chaos=False):
           outputs=['run_pilot'])
 
     # Run the pilot if the mode is not user.
-    kl = KerasLinear()
+    kl = KerasLinear(image_size=cfg.CAMERA_RESOLUTION)
     if model_path:
         kl.load(model_path)
 
@@ -135,7 +135,7 @@ def train(cfg, tub_names, new_model_path, base_model_path=None):
 
     new_model_path = os.path.expanduser(new_model_path)
 
-    kl = KerasLinear()
+    kl = KerasLinear(image_size=cfg.CAMERA_RESOLUTION)
     if base_model_path is not None:
         base_model_path = os.path.expanduser(base_model_path)
         kl.load(base_model_path)

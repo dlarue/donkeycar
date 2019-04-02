@@ -120,7 +120,7 @@ def drive(cfg):
 
     # single tub
     # tub = TubWriter(path=cfg.TUB_PATH, inputs=inputs, types=types)
-    # V.add(tub, inputs=inputs, run_condition='recording')
+    V.add(tub, inputs=inputs, run_condition='recording')
 
     # run the vehicle
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
