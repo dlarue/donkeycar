@@ -64,7 +64,7 @@ class KerasPilot:
 
 class KerasLinear(KerasPilot):
     def __init__(self, model=None, num_outputs=None, *args, **kwargs):
-        super(KerasLinear, self).__init__(*args, **kwargs)
+        super(KerasLinear, self).__init__()
         if model:
             self.model = model
         elif num_outputs is not None:
