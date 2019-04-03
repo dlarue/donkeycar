@@ -45,6 +45,7 @@ THROTTLE_RC_GPIO = 20
 BATCH_SIZE = 128
 TRAIN_TEST_SPLIT = 0.8
 PATIENCE = 5
+EPOCHS = 200
 
 TUB_PATH = os.path.join(CAR_PATH, 'tub') # if using a single tub
 
