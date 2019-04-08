@@ -154,7 +154,7 @@ class RCReceiver:
     """
     MIN_OUT = -1
     MAX_OUT = 1
-    def __init__(self, pi, gpio, weighting=0.0, invert=False):
+    def __init__(self, pi, gpio, invert=False, jitter=0.001):
         """
         Instantiate with the Pi and gpio of the PWM signal
         to monitor.
@@ -167,49 +167,30 @@ class RCReceiver:
         """
         self.pi = pi
         self.gpio = gpio
-
-        if weighting < 0.0:
-            weighting = 0.0
-        elif weighting > 0.99:
-            weighting = 0.99
-
-        self._new = 1.0 - weighting  # Weighting for new reading.
-        self._old = weighting  # Weighting for old reading.
         self._high_tick = None
         self._period = None
         self._high = None
         self._min_pwm = 1000
         self._max_pwm = 2000
         self._invert = invert
+        self._jitter = jitter
 
         pi.set_mode(self.gpio, pigpio.INPUT)
         self._cb = pi.callback(self.gpio, pigpio.EITHER_EDGE, self._cbf)
 
-    def _update_param(self, param, tick):
+    def _update_param(self, tick):
         """ Helper function for callback function _cbf"""
         if self._high_tick is not None:
             t = pigpio.tickDiff(self._high_tick, tick)
-            if param is not None:
-                return self._old * param + self._new * t
-            else:
-                return t
+            return t
 
     def _cbf(self, gpio, level, tick):
         """ Callback function """
         if level == 1:
-            self._period = self._update_param(self._period, tick)
+            self._period = self._update_param(tick)
             self._high_tick = tick
         elif level == 0:
-            self._high = self._update_param(self._high, tick)
-
-    def frequency(self):
-        """
-        Returns the PWM frequency.
-        """
-        if self._period is not None:
-            return 1000000.0 / self._period
-        else:
-            return 0.0
+            self._high = self._update_param(tick)
 
     def pulse_width(self):
         """
@@ -217,15 +198,6 @@ class RCReceiver:
         """
         if self._high is not None:
             return self._high
-        else:
-            return 0.0
-
-    def duty_cycle(self):
-        """
-        Returns the PWM duty cycle percentage.
-        """
-        if self._high is not None:
-            return 100.0 * self._high / self._period
         else:
             return 0.0
 
@@ -241,10 +213,11 @@ class RCReceiver:
         """
         pulse = (self.pulse_width() - self._min_pwm) / (self._max_pwm - self._min_pwm) \
             * (self.MAX_OUT - self.MIN_OUT)
+        is_action = abs(pulse - (self.MAX_OUT + self.MIN_OUT)/2.0) > self._jitter
         if not self._invert:
-            return pulse + self.MIN_OUT
+            return pulse + self.MIN_OUT, is_action
         else:
-            return -pulse + self.MAX_OUT
+            return -pulse + self.MAX_OUT, is_action
 
 
     def shutdown(self):

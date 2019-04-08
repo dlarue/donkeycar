@@ -93,8 +93,8 @@ def drive(cfg):
     pi = pigpio.pi()
     rc_steering = RCReceiver(pi, cfg.STEERING_RC_GPIO)
     rc_throttle = RCReceiver(pi, cfg.THROTTLE_RC_GPIO)
-    V.add(rc_steering, outputs=['user/angle'])
-    V.add(rc_throttle, outputs=['user/throttle'])
+    V.add(rc_steering, outputs=['user/angle', 'user/steering_on'])
+    V.add(rc_throttle, outputs=['user/throttle', 'user/throttle_on'])
 
     steering_controller = PCA9685(cfg.STEERING_CHANNEL)
     steering = PWMSteering(controller=steering_controller,
@@ -120,7 +120,7 @@ def drive(cfg):
 
     # single tub
     # tub = TubWriter(path=cfg.TUB_PATH, inputs=inputs, types=types)
-    V.add(tub, inputs=inputs, run_condition='recording')
+    V.add(tub, inputs=inputs, run_condition='user/throttle_on')
 
     # run the vehicle
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
@@ -129,9 +129,7 @@ def drive(cfg):
 if __name__ == '__main__':
     args = docopt(__doc__)
     cfg = dk.load_config()
-
-    if args['drive']:
-        drive(cfg)
+    drive(cfg)
 
 
 
