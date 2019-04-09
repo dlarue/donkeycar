@@ -3,7 +3,7 @@
 Script to drive a donkey 2 car using the RC controller instead of the web controller
 
 Usage:
-    manage.py (drive)
+    manage.py
 
 Options:
     -h --help        Show this screen.
