@@ -155,7 +155,7 @@ class RCReceiver:
     MIN_OUT = -1
     MAX_OUT = 1
 
-    def __init__(self, pi, gpio, invert=False, jitter=0.001):
+    def __init__(self, pi, gpio, invert=False, jitter=0.015):
         """
         Instantiate with the Pi and gpio of the PWM signal
         to monitor.
