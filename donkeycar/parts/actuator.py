@@ -154,6 +154,7 @@ class RCReceiver:
     """
     MIN_OUT = -1
     MAX_OUT = 1
+
     def __init__(self, pi, gpio, invert=False, jitter=0.001):
         """
         Instantiate with the Pi and gpio of the PWM signal
@@ -213,16 +214,35 @@ class RCReceiver:
         """
         pulse = (self.pulse_width() - self._min_pwm) / (self._max_pwm - self._min_pwm) \
             * (self.MAX_OUT - self.MIN_OUT)
-        is_action = abs(pulse - (self.MAX_OUT + self.MIN_OUT)/2.0) > self._jitter
+        is_action = abs(pulse - (self.MAX_OUT - self.MIN_OUT)/2.0) > self._jitter
         if not self._invert:
             return pulse + self.MIN_OUT, is_action
         else:
             return -pulse + self.MAX_OUT, is_action
-
 
     def shutdown(self):
         """
         Donkey parts interface
         """
         self.cancel()
+
+
+class MockRCReceiver:
+    """
+    Mock of the above to run on host for debugging
+    """
+    def __init__(self):
+        self.is_run_ = False
+
+    def run(self):
+        if self.is_run_ is True:
+            self.is_run_ = False
+            return 0.5, True
+        else:
+            self.is_run_ = True
+            return 0.0, False
+
+    def shutdown(self):
+        pass
+
 

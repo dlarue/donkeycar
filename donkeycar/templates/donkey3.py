@@ -40,55 +40,6 @@ def drive(cfg):
     cam = PiCamera(resolution=cfg.CAMERA_RESOLUTION)
     V.add(cam, outputs=['cam/image_array'], threaded=True)
 
-    """
-    ctr = LocalWebController(use_chaos=use_chaos)
-    V.add(ctr,
-          inputs=['cam/image_array'],
-          outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
-          threaded=True)
-
-    # See if we should even run the pilot module.
-    # This is only needed because the part run_condition only accepts boolean
-    def pilot_condition(mode):
-        if mode == 'user':
-            return False
-        else:
-            return True
-
-    pilot_condition_part = Lambda(pilot_condition)
-    V.add(pilot_condition_part,
-          inputs=['user/mode'],
-          outputs=['run_pilot'])
-
-    # Run the pilot if the mode is not user.
-    kl = KerasLinear()
-    if model_path:
-        kl.load(model_path)
-
-    V.add(kl,
-          inputs=['cam/image_array'],
-          outputs=['pilot/angle', 'pilot/throttle'],
-          run_condition='run_pilot')
-
-    # Choose what inputs should change the car.
-    def drive_mode(mode,
-                   user_angle, user_throttle,
-                   pilot_angle, pilot_throttle):
-        if mode == 'user':
-            return user_angle, user_throttle
-
-        elif mode == 'local_angle':
-            return pilot_angle, user_throttle
-
-        else:
-            return pilot_angle, pilot_throttle
-
-    drive_mode_part = Lambda(drive_mode)
-    V.add(drive_mode_part,
-          inputs=['user/mode', 'user/angle', 'user/throttle',
-                  'pilot/angle', 'pilot/throttle'],
-          outputs=['angle', 'throttle'])
-    """
     # Create the RC receiver
     pi = pigpio.pi()
     rc_steering = RCReceiver(pi, cfg.STEERING_RC_GPIO, invert=True)
