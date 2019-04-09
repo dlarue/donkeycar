@@ -91,7 +91,7 @@ def drive(cfg):
     """
     # Create the RC receiver
     pi = pigpio.pi()
-    rc_steering = RCReceiver(pi, cfg.STEERING_RC_GPIO)
+    rc_steering = RCReceiver(pi, cfg.STEERING_RC_GPIO, invert=True)
     rc_throttle = RCReceiver(pi, cfg.THROTTLE_RC_GPIO)
     V.add(rc_steering, outputs=['user/angle', 'user/steering_on'])
     V.add(rc_throttle, outputs=['user/throttle', 'user/throttle_on'])
