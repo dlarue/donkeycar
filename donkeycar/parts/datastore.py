@@ -226,8 +226,8 @@ class Tub(object):
         except:
             logger.error('Unexpected error: {}'.format(sys.exc_info()[0]))
             raise
-        # if record is not type user
-        if json_data["user/mode"] != "user":
+        # if record has user/mode but is not type user
+        if "user/mode" in json_data and json_data["user/mode"] != "user":
             raise Exception('bad record: %d. "user/mode" should be "user" for recorded data. \
                             You may want to run `donkey tubcheck --fix`' % ix)
         record_dict = self.make_record_paths_absolute(json_data)
