@@ -183,3 +183,16 @@ a way that makes sense to you; the PWM signals output by the PCA9685 board are t
 RC control kind, NOT the motor control kind! Also, most affordable two-wheel-drive
 robot chassis are not actually big enough, strong enough, and mechanically
 consistent enough to make for good Donkey Car candidates.
+
+## Turnigy 1/16th 4WD Brushless Buggy
+
+The Turnigy 1/16th 4WD Brushless Buggy is a well make RC car which comes at a 
+reasonable price. 
+![4WD_Buggy](./assets/4wd_buggy.jpg)
+I have bought this car and made following modifications and improvements:
+* replaced the brushless motor and esc with brushed counterparts as the car
+was too fast to be controllable
+* enabled the included remote control by building a small voltage divider and
+writing an rc receiver part in the donkeycar library
+
+The car can be bought from HobbyKing for example (https://hobbyking.com/en_us/turnigy-1-16-brushless-4wd-racing-buggy-w-25a-power-system-and-2-4ghz-radio-rtr.html?gclid=CjwKCAjwqqrmBRAAEiwAdpDXtFS4SQOmtAFHIMZ9HrEiBeGwMeOg9UfNnKB6_Nr-yxoUUoyarf6FORoC7NgQAvD_BwE&gclsrc=aw.ds&___store=en_us). 
