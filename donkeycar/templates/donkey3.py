@@ -99,7 +99,7 @@ def calibrate(cfg):
 
     # create the lambda function for plotting
     def plotter(angle, steering_on, throttle, throttle_on):
-        print('angle=%5.4f, steering_on=%1d, throttle=%5.4f, throttle_on=%1d' %
+        print('angle=%+5.4f, steering_on=%1d, throttle=%+5.4f, throttle_on=%1d' %
               (angle, steering_on, throttle, throttle_on))
 
     plotter_part = Lambda(plotter)
