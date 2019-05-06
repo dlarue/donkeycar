@@ -155,7 +155,7 @@ class RCReceiver:
     MIN_OUT = -1
     MAX_OUT = 1
 
-    def __init__(self, pi, gpio, invert=False, jitter=0.015):
+    def __init__(self, gpio, invert=False, jitter=0.015):
         """
         Instantiate with the Pi and gpio of the PWM signal
         to monitor.
@@ -166,7 +166,7 @@ class RCReceiver:
         the old reading has no effect.  This may be used to
         smooth the data.
         """
-        self.pi = pi
+        self.pi = pigpio.pi()
         self.gpio = gpio
         self._high_tick = None
         self._period = None
@@ -176,8 +176,8 @@ class RCReceiver:
         self._invert = invert
         self._jitter = jitter
 
-        pi.set_mode(self.gpio, pigpio.INPUT)
-        self._cb = pi.callback(self.gpio, pigpio.EITHER_EDGE, self._cbf)
+        self.pi.set_mode(self.gpio, pigpio.INPUT)
+        self._cb = self.pi.callback(self.gpio, pigpio.EITHER_EDGE, self._cbf)
 
     def _update_param(self, tick):
         """ Helper function for callback function _cbf"""

@@ -9,7 +9,6 @@ Usage:
 Options:
     -h --help        Show this screen.
 """
-import os
 
 from docopt import docopt
 import donkeycar as dk
@@ -18,7 +17,6 @@ from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle, RCReceiv
 from donkeycar.parts.datastore import TubGroup, TubWriter, TubHandler
 from donkeycar.parts.clock import Timestamp
 from donkeycar.parts.transform import Lambda
-import pigpio
 
 
 def drive(cfg):
@@ -42,9 +40,8 @@ def drive(cfg):
     donkey_car.add(cam, outputs=['cam/image_array'], threaded=True)
 
     # create the RC receiver
-    pi = pigpio.pi()
-    rc_steering = RCReceiver(pi, cfg.STEERING_RC_GPIO, invert=True)
-    rc_throttle = RCReceiver(pi, cfg.THROTTLE_RC_GPIO)
+    rc_steering = RCReceiver(cfg.STEERING_RC_GPIO, invert=True)
+    rc_throttle = RCReceiver(cfg.THROTTLE_RC_GPIO)
     donkey_car.add(rc_steering, outputs=['user/angle', 'user/steering_on'])
     donkey_car.add(rc_throttle, outputs=['user/throttle', 'user/throttle_on'])
 
@@ -91,9 +88,8 @@ def calibrate(cfg):
     donkey_car.add(clock, outputs=['timestamp'])
 
     # create the RC receiver
-    pi = pigpio.pi()
-    rc_steering = RCReceiver(pi, cfg.STEERING_RC_GPIO, invert=True)
-    rc_throttle = RCReceiver(pi, cfg.THROTTLE_RC_GPIO)
+    rc_steering = RCReceiver(cfg.STEERING_RC_GPIO, invert=True)
+    rc_throttle = RCReceiver(cfg.THROTTLE_RC_GPIO)
     donkey_car.add(rc_steering, outputs=['user/angle', 'user/steering_on'])
     donkey_car.add(rc_throttle, outputs=['user/throttle', 'user/throttle_on'])
 
@@ -103,7 +99,6 @@ def calibrate(cfg):
               (angle, steering_on, throttle, throttle_on))
 
     plotter_part = Lambda(plotter)
-
     # add plotter part
     donkey_car.add(plotter_part, inputs=['user/angle', 'user/steering_on',
                                          'user/throttle', 'user/throttle_on'])
