@@ -25,28 +25,24 @@ logger = get_logger(__name__)
 
 class Tub(object):
     """
-    A datastore to store sensor data in a key, value format.
-
-    Accepts str, int, float, image_array, image, and array data types.
-
-    For example:
+    A data store to store sensor data in a key, value format. Accepts str, int,
+    float, image_array, image, and array data types. For example:
 
     #Create a tub to store speed values.
-    >>> path = '~/mydonkey/test_tub'
-    >>> inputs = ['user/speed', 'cam/image']
-    >>> types = ['float', 'image']
-    >>> t=Tub(path=path, inputs=inputs, types=types)
-
+    path = '~/mydonkey/test_tub'
+    inputs = ['user/speed', 'cam/image']
+    types = ['float', 'image']
+    t=Tub(path=path, inputs=inputs, types=types)
     """
 
-    def __init__(self, path, inputs=None, types=None):
+    def __init__(self, path, inputs=None, types=None, allow_reverse=False):
 
         self.path = os.path.expanduser(path)
         logger.info('path_in_tub: {}'.format(self.path))
         self.meta_path = os.path.join(self.path, 'meta.json')
         self.df = None
-
         exists = os.path.exists(self.path)
+        self.allow_reverse = allow_reverse
 
         if exists:
             # load log and meta
@@ -158,12 +154,12 @@ class Tub(object):
         for ix in self.get_index(shuffled=False):
             try:
                 self.get_record(ix)
-            except:
+            except Exception as e:
                 problems = True
                 if fix is False:
-                    logger.warning('problems with record {} : {}'.format(ix, self.path))
+                    logger.warning('Problem with record {} at {}: {}'.format(ix, self.path, str(e)))
                 else:
-                    logger.warning('problems with record {}, removing: {}'.format(ix, self.path))
+                    logger.warning('Problem with record {} at {}, removing because: {}'.format(ix, self.path, str(e)))
                     self.remove_record(ix)
         if not problems:
             logger.info('No problems found.')
@@ -228,8 +224,13 @@ class Tub(object):
             raise
         # if record has user/mode but is not type user
         if "user/mode" in json_data and json_data["user/mode"] != "user":
-            raise Exception('bad record: %d. "user/mode" should be "user" for recorded data. \
-                            You may want to run `donkey tubcheck --fix`' % ix)
+            raise Exception('Bad record: %d. "user/mode" should be "user" for recorded data. '
+                            'You may want to run `donkey tubcheck --fix`' % ix)
+        # if negative throttle values are recorded
+        if self.allow_reverse is False and json_data["user/throttle"] < 0.0:
+            raise Exception('Bad record: %d. "user/throttle" should be >0 for recorded data. '
+                            'You may want to run `donkey tubcheck --fix`' % ix)
+
         record_dict = self.make_record_paths_absolute(json_data)
         return record_dict
 
