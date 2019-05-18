@@ -92,7 +92,7 @@ def calibrate(cfg):
     # create the RC receiver
     rc_steering = RCReceiver(cfg.STEERING_RC_GPIO, invert=True)
     rc_throttle = RCReceiver(cfg.THROTTLE_RC_GPIO)
-    rc_wiper = RCReceiver(cfg.DATA_WIPER_RC_GPIO,no_action=0)
+    rc_wiper = RCReceiver(cfg.DATA_WIPER_RC_GPIO, jitter=0.05, no_action=0)
     donkey_car.add(rc_steering, outputs=['user/angle', 'user/steering_on'])
     donkey_car.add(rc_throttle, outputs=['user/throttle', 'user/throttle_on'])
     donkey_car.add(rc_wiper, outputs=['user/wiper', 'user/wiper_on'])
