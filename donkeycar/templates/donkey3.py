@@ -80,7 +80,9 @@ def calibrate(cfg):
     Construct an auxiliary robotic vehicle from only the RC controllers and
     prints their values. The RC remote usually has a tuning pot for the throttle
     and steering channel. In this loop we run the controllers and simply print
-    their values in order to allow centering the RC pwm signals.
+    their values in order to allow centering the RC pwm signals. If there is a
+    third channel on the remote we can use it for wiping bad data while
+    recording, so we print its values here, too.
     """
     donkey_car = dk.vehicle.Vehicle()
 
@@ -90,18 +92,22 @@ def calibrate(cfg):
     # create the RC receiver
     rc_steering = RCReceiver(cfg.STEERING_RC_GPIO, invert=True)
     rc_throttle = RCReceiver(cfg.THROTTLE_RC_GPIO)
+    rc_wiper = RCReceiver(cfg.DATA_WIPER_RC_GPIO,no_action=RCReceiver.MIN_OUT)
     donkey_car.add(rc_steering, outputs=['user/angle', 'user/steering_on'])
     donkey_car.add(rc_throttle, outputs=['user/throttle', 'user/throttle_on'])
+    donkey_car.add(rc_wiper, outputs=['user/wiper', 'user/wiper_on'])
 
-    # create the lambda function for plotting
-    def plotter(angle, steering_on, throttle, throttle_on):
-        print('angle=%+5.4f, steering_on=%1d, throttle=%+5.4f, throttle_on=%1d' %
-              (angle, steering_on, throttle, throttle_on))
+    # create the lambda function for plotting into the shell
+    def plotter(angle, steering_on, throttle, throttle_on, wiper, wiper_on):
+        print('angle=%+5.4f, steering_on=%1d, throttle=%+5.4f, throttle_on=%1d'
+              'wiper=%+5.4f, wiper_on=%1d'%
+              (angle, steering_on, throttle, throttle_on, wiper, wiper_on))
 
     plotter_part = Lambda(plotter)
     # add plotter part
     donkey_car.add(plotter_part, inputs=['user/angle', 'user/steering_on',
-                                         'user/throttle', 'user/throttle_on'])
+                                         'user/throttle', 'user/throttle_on',
+                                         'user/wiper', 'user/wiper_on'])
 
     # run the vehicle
     donkey_car.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)

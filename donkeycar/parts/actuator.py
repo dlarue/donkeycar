@@ -155,16 +155,15 @@ class RCReceiver:
     MIN_OUT = -1
     MAX_OUT = 1
 
-    def __init__(self, gpio, invert=False, jitter=0.015):
+    def __init__(self, gpio, invert=False, jitter=0.015, no_action=None):
         """
-        Instantiate with the Pi and gpio of the PWM signal
-        to monitor.
-
-        Optionally a weighting may be specified.  This is a number
-        between 0 and 1 and indicates how much the old reading
-        affects the new reading.  It defaults to 0 which means
-        the old reading has no effect.  This may be used to
-        smooth the data.
+        :param gpio: gpio pin connected to RC channel
+        :param invert: invert value or run() within [MIN_OUT,MAX_OUT]
+        :param jitter: threshold below which no signal is reported
+        :param no_action: value within [MIN_OUT,MAX_OUT] if no RC signal is
+                            sent. This is usually zero for throttle and steering
+                            being the center values when the controls are not
+                            pressed.
         """
         self.pi = pigpio.pi()
         self.gpio = gpio
@@ -175,6 +174,10 @@ class RCReceiver:
         self._max_pwm = 2000
         self._invert = invert
         self._jitter = jitter
+        if no_action:
+            self._no_action = no_action
+        else:
+            self._no_action = (self.MAX_OUT - self.MIN_OUT)/2.0
 
         self.pi.set_mode(self.gpio, pigpio.INPUT)
         self._cb = self.pi.callback(self.gpio, pigpio.EITHER_EDGE, self._cbf)
@@ -212,13 +215,15 @@ class RCReceiver:
         """
         Donkey parts interface, returns pulse mapped into [MIN_OUT,MAX_OUT] or [MAX_OUT,MIN_OUT]
         """
-        pulse = (self.pulse_width() - self._min_pwm) / (self._max_pwm - self._min_pwm) \
+        # signal is a value in [0, (MAX_OUT-MIN_OUT)]
+        signal = (self.pulse_width() - self._min_pwm) / (self._max_pwm - self._min_pwm) \
             * (self.MAX_OUT - self.MIN_OUT)
-        is_action = abs(pulse - (self.MAX_OUT - self.MIN_OUT)/2.0) > self._jitter
+        # Assuming non-activity if the pulse is in the middle of [MIN_OUT,MAX_OUT]
+        is_action = abs(signal - self._no_action) > self._jitter
         if not self._invert:
-            return pulse + self.MIN_OUT, is_action
+            return signal + self.MIN_OUT, is_action
         else:
-            return -pulse + self.MAX_OUT, is_action
+            return -signal + self.MAX_OUT, is_action
 
     def shutdown(self):
         """
@@ -244,5 +249,4 @@ class MockRCReceiver:
 
     def shutdown(self):
         pass
-
 
