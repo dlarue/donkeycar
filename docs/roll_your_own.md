@@ -186,7 +186,7 @@ consistent enough to make for good Donkey Car candidates.
 
 ## Turnigy 1/16th 4WD Brushless Buggy
 
-The Turnigy 1/16th 4WD Brushless Buggy is a well make RC car which comes at a 
+The Turnigy 1/16th 4WD Brushless Buggy is a well made RC car which comes at a 
 reasonable price. The car can be bought from [HobbyKing](https://hobbyking.com/en_us/turnigy-1-16-brushless-4wd-racing-buggy-w-25a-power-system-and-2-4ghz-radio-rtr.html?gclid=CjwKCAjwqqrmBRAAEiwAdpDXtFS4SQOmtAFHIMZ9HrEiBeGwMeOg9UfNnKB6_Nr-yxoUUoyarf6FORoC7NgQAvD_BwE&gclsrc=aw.ds&___store=en_us). 
 
 ![4WD_Buggy](./assets/4WD_buggy.jpg)
