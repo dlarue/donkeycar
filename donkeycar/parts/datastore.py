@@ -501,7 +501,7 @@ class TubReader(Tub):
 
         record_dict = self.get_record(self.read_ix)
         self.read_ix += 1
-        record = [record_dict[key] for key in args ]
+        record = [record_dict[key] for key in args]
         return record
 
 
@@ -667,8 +667,8 @@ class TubGroup(Tub):
             record_count += len(t.df)
             self.input_types.update(dict(zip(t.inputs, t.types)))
 
-        logger.info('joining the tubs {} records together. This could take {} minutes.'.format(record_count,
-                                                                                         int(record_count / 300000)))
+        logger.info('joining the tubs {} records together. This could take {}'
+                    ' minutes.'.format(record_count, int(record_count / 300000)))
 
         self.meta = {'inputs': list(self.input_types.keys()),
                      'types': list(self.input_types.values())}
@@ -688,3 +688,40 @@ class TubGroup(Tub):
 
     def get_num_records(self):
         return len(self.df)
+
+
+class TubWiper:
+    """
+    Donkey part which allows to delete a bunch of records from the end of tub.
+    This allows to remove bad data already during recording. As this gets called
+    in the vehicle loop the deletion runs only once in each continuous
+    activation. A new execution requires to release of the input trigger. The
+    action could result in a multiple number of executions otherwise.
+    """
+    def __init__(self, tub, num_records=20):
+        """
+        :param tub: tub to operate on
+        :param num_records: number or records to delete
+        """
+        self._tub = tub
+        self._num_records = num_records
+        self._active_loop = False
+
+    def run(self, is_delete):
+        """
+        Method in the vehicle loop. Delete records when trigger switches from
+        False to True only.
+        :param is_delete: if deletion has been triggered by the caller
+        """
+        # only run if input is true and debounced
+        if is_delete:
+            if not self._active_loop:
+                # action command
+                self._tub.remove_last_records(self._num_records)
+                # increase the loop counter
+                self._active_loop = True
+        else:
+            # trigger released, reset active loop
+            self._active_loop = False
+
+
