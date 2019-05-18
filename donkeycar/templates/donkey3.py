@@ -66,12 +66,20 @@ def drive(cfg):
     inputs = ['cam/image_array', 'user/angle', 'user/throttle', 'timestamp']
     types = ['image_array', 'float', 'float', 'str']
 
+    def recording_condition(throttle_on, throttle_val):
+        return throttle_on and throttle_val > 0
+
+    recording_condition_part = Lambda(recording_condition)
+    donkey_car.add(recording_condition_part,
+                   inputs=['user/throttle_on', 'user/throttle'],
+                   outputs=['user/recording'])
+
     # multiple tubs
     tub_hand = TubHandler(path=cfg.DATA_PATH)
     tub = tub_hand.new_tub_writer(inputs=inputs, types=types)
     # single tub
     # tub = TubWriter(path=cfg.TUB_PATH, inputs=inputs, types=types)
-    donkey_car.add(tub, inputs=inputs, run_condition='user/throttle_on')
+    donkey_car.add(tub, inputs=inputs, run_condition='user/recording')
 
     # add a tub wiper that is triggered by channel 3 on the RC
     tub_wipe = TubWiper(tub, num_records=20)
