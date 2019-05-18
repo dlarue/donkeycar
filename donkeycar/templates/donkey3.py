@@ -92,14 +92,14 @@ def calibrate(cfg):
     # create the RC receiver
     rc_steering = RCReceiver(cfg.STEERING_RC_GPIO, invert=True)
     rc_throttle = RCReceiver(cfg.THROTTLE_RC_GPIO)
-    rc_wiper = RCReceiver(cfg.DATA_WIPER_RC_GPIO,no_action=RCReceiver.MIN_OUT)
+    rc_wiper = RCReceiver(cfg.DATA_WIPER_RC_GPIO,no_action=0)
     donkey_car.add(rc_steering, outputs=['user/angle', 'user/steering_on'])
     donkey_car.add(rc_throttle, outputs=['user/throttle', 'user/throttle_on'])
     donkey_car.add(rc_wiper, outputs=['user/wiper', 'user/wiper_on'])
 
     # create the lambda function for plotting into the shell
     def plotter(angle, steering_on, throttle, throttle_on, wiper, wiper_on):
-        print('angle=%+5.4f, steering_on=%1d, throttle=%+5.4f, throttle_on=%1d'
+        print('angle=%+5.4f, steering_on=%1d, throttle=%+5.4f, throttle_on=%1d '
               'wiper=%+5.4f, wiper_on=%1d'%
               (angle, steering_on, throttle, throttle_on, wiper, wiper_on))
 
