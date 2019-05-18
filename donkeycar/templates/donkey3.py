@@ -77,8 +77,6 @@ def drive(cfg):
     # multiple tubs
     tub_hand = TubHandler(path=cfg.DATA_PATH)
     tub = tub_hand.new_tub_writer(inputs=inputs, types=types)
-    # single tub
-    # tub = TubWriter(path=cfg.TUB_PATH, inputs=inputs, types=types)
     donkey_car.add(tub, inputs=inputs, run_condition='user/recording')
 
     # add a tub wiper that is triggered by channel 3 on the RC
