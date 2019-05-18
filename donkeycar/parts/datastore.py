@@ -166,10 +166,32 @@ class Tub(object):
 
     def remove_record(self, ix):
         """
-        remove data associate with a record
+        remove data associate with a record, both json and jpg
         """
-        record = self.get_json_record_path(ix)
-        os.unlink(record)
+        try:
+            record = self.get_json_record_path(ix)
+            os.remove(record)
+        except FileNotFoundError:
+            pass
+        jpeg = self.make_file_name('cam-image_array', '.jpg', ix=ix)
+        full_path_jpeg = os.path.join(self.path, jpeg)
+        try:
+            os.remove(full_path_jpeg)
+        except OSError:
+            pass
+
+    def remove_last_records(self, num_records):
+        """
+        Removes records from the end. These might not be continuously labeled.
+        :param num_records: number or records to be removed from end
+        :return:
+        """
+        removed_records = 0
+        while removed_records < num_records:
+            last_ix = self.get_last_ix()
+            self.remove_record(last_ix)
+            removed_records = removed_records + 1
+
 
     def put_record(self, data):
         """
@@ -205,9 +227,6 @@ class Tub(object):
         return self.current_ix
 
     def get_json_record_path(self, ix):
-        # fill zeros
-        # return os.path.join(self.path, 'record_'+str(ix).zfill(6)+'.json')
-        # don't fill zeros
         return os.path.join(self.path, 'record_' + str(ix) + '.json')
 
     def get_json_record(self, ix):
@@ -252,10 +271,12 @@ class Tub(object):
             data[key] = val
         return data
 
-    def make_file_name(self, key, ext='.png'):
-        # name = '_'.join([str(self.current_ix).zfill(6), key, ext])
-        name = '_'.join([str(self.current_ix), key, ext])  # don't fill zeros
-        name = name = name.replace('/', '-')
+    def make_file_name(self, key, ext='.png', ix=None):
+        this_ix = ix
+        if this_ix is None:
+            this_ix = self.current_ix
+        name = '_'.join([str(this_ix), key, ext])
+        name = name.replace('/', '-')
         return name
 
     def delete(self):
@@ -304,11 +325,14 @@ class Tub(object):
 
                 yield record_dict
 
-    def get_batch_gen(self, keys=None, batch_size=128, record_transform=None, shuffle=True, df=None):
+    def get_batch_gen(self, keys=None, batch_size=128, record_transform=None,
+                      shuffle=True, df=None):
         """
         Returns batches of records.
 
-        Additionally, each record in a batch is split up into a dict with inputs:list of values. By specifying keys as a subset of the inputs, you can filter out unnecessary data.
+        Additionally, each record in a batch is split up into a dict with
+        inputs:list of values. By specifying keys as a subset of the inputs,
+        you can filter out unnecessary data.
 
         Parameters
         ----------
