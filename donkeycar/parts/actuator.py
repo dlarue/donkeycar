@@ -147,10 +147,7 @@ class RCReceiver:
     http://abyz.me.uk/rpi/pigpio/code/read_PWM_py.zip. You will
     need a voltage divider from a 5V RC receiver to a 3.3V Pi input pin.
 
-    A class to read PWM pulses and calculate their frequency
-    and duty cycle.  The frequency is how often the pulse
-    happens per second.  The duty cycle is the percentage of
-    pulse high time per cycle.
+    A class to read PWM pulses and calculate their frequency.
     """
     MIN_OUT = -1
     MAX_OUT = 1
