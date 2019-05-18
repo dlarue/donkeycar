@@ -174,10 +174,10 @@ class RCReceiver:
         self._max_pwm = 2000
         self._invert = invert
         self._jitter = jitter
-        if no_action:
+        if no_action is not None:
             self._no_action = no_action
         else:
-            self._no_action = (self.MAX_OUT - self.MIN_OUT)/2.0
+            self._no_action = (self.MAX_OUT - self.MIN_OUT) / 2.0
 
         self.pi.set_mode(self.gpio, pigpio.INPUT)
         self._cb = self.pi.callback(self.gpio, pigpio.EITHER_EDGE, self._cbf)
