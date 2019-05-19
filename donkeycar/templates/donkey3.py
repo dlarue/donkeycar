@@ -30,6 +30,8 @@ def drive(cfg):
     framework handles passing named outputs to parts requesting the same named
     input.
     """
+    # setup logger
+    dk.log.setup()
 
     donkey_car = dk.vehicle.Vehicle()
 
