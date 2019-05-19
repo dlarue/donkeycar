@@ -152,7 +152,7 @@ class RCReceiver:
     MIN_OUT = -1
     MAX_OUT = 1
 
-    def __init__(self, gpio, invert=False, jitter=0.015, no_action=None):
+    def __init__(self, gpio, invert=False, jitter=0.025, no_action=None):
         """
         :param gpio: gpio pin connected to RC channel
         :param invert: invert value or run() within [MIN_OUT,MAX_OUT]
