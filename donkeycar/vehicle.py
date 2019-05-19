@@ -105,7 +105,7 @@ class Vehicle:
                 sleep_time = 1.0 / rate_hz - (time.time() - start_time)
                 proc_util_pct = 100 * (1.0 - sleep_time * rate_hz)
                 if sleep_time < 0.1 / rate_hz:
-                    logger.warning('processor at %1.2f%' % proc_util_pct)
+                    logger.warning('processor at %1.2f' % proc_util_pct)
                 if sleep_time > 0.0:
                     time.sleep(sleep_time)
 
