@@ -37,6 +37,8 @@ def drive(cfg, model_path=None, use_chaos=False):
     Parts may have named outputs and inputs. The framework handles passing named outputs
     to parts requesting the same named input.
     """
+    # setup logger
+    dk.log.setup()
 
     V = dk.vehicle.Vehicle()
 
