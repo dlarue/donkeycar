@@ -11,7 +11,7 @@ The client and web server needed to control a car remotely.
 """
 
 import random
-
+import logging
 
 import os
 import time
@@ -63,6 +63,8 @@ class LocalWebController(tornado.web.Application):
 
         settings = {'debug': True}
         super().__init__(handlers, **settings)
+        # Suppress all the logging below WARNING level in tornado
+        logging.getLogger('tornado.access').setLevel(logging.WARNING)
 
     def run_chaos(self, img_arr=None):
         """
