@@ -30,8 +30,8 @@ class PiCamera(BaseCamera):
         self.frame = None
         self.on = True
 
-        print('PiCamera loaded.. .warming camera')
-        time.sleep(2)
+        print('PiCamera loaded...warming camera')
+        time.sleep(1)
 
     def run(self):
         f = next(self.stream)
@@ -54,7 +54,7 @@ class PiCamera(BaseCamera):
     def shutdown(self):
         # indicate that the thread should be stopped
         self.on = False
-        print('stoping PiCamera')
+        print('PiCamera stopped')
         time.sleep(.5)
         self.stream.close()
         self.rawCapture.close()

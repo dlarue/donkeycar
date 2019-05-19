@@ -44,6 +44,7 @@ class PWMSteering:
         self.controller = controller
         self.left_pulse = left_pulse
         self.right_pulse = right_pulse
+        print('PWM Steering created')
 
     def run(self, angle):
         # map absolute angle to angle that vehicle can implement.
@@ -81,6 +82,7 @@ class PWMThrottle:
         # send zero pulse to calibrate ESC
         self.controller.set_pulse(self.zero_pulse)
         time.sleep(1)
+        print('PWM Throttle created')
 
     def run(self, throttle):
         if throttle > 0:
@@ -178,6 +180,7 @@ class RCReceiver:
 
         self.pi.set_mode(self.gpio, pigpio.INPUT)
         self._cb = self.pi.callback(self.gpio, pigpio.EITHER_EDGE, self._cbf)
+        print('RCReceiver gpio ' + str(gpio) + ' created')
 
     def _update_param(self, tick):
         """ Helper function for callback function _cbf"""
