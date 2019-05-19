@@ -138,7 +138,8 @@ class VideoAPI(tornado.web.RequestHandler):
         while True:
 
             interval = .1
-            if self.served_image_timestamp + interval < time.time():
+            if self.served_image_timestamp + interval < time.time() and \
+                    hasattr(self.application, 'img_arr'):
 
                 img = util.img.arr_to_binary(self.application.img_arr)
 
