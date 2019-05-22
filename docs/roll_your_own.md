@@ -197,4 +197,14 @@ was too fast to be controllable
 * enabled the included remote control by building a small voltage divider and
 writing an rc receiver part in the donkeycar library
 
+### The RC Receiver
+Using the RC receiver that comes with the car allows driving without the need 
+of a wireless connection (except for starting up the car). Here is a picture using
+a small prototype PCB with 3 voltage dividers for 3 channels of the RC control.
+
+![Voltage_Divider](./assets/voltage_div.jpeg)
+
+The divider uses $5.1k\Omega$ between RC receiver and Raspi input pin and $10k\Omega$
+between Raspi input and ground. This scales down the 5V comming from the receiver to 3.3V 
+that can be processed as by the Pi.
 
