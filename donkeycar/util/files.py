@@ -57,6 +57,7 @@ def expand_path_mask(path):
 
 
 def expand_path_arg(path_str):
+    path_str = path_str.replace(', ', ',')
     path_list = path_str.split(",")
     expanded_paths = []
     for path in path_list:
