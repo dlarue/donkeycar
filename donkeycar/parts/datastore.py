@@ -182,14 +182,14 @@ class Tub(object):
 
     def remove_last_records(self, num_records):
         """
-        Removes records from the end. These might not be continuously labeled.
+        Removes records from the end. Assume these are continuously labeled.
         :param num_records: number or records to be removed from end
         :return:
         """
         removed_records = 0
+        last_ix = self.current_ix - 1
         while removed_records < num_records:
-            last_ix = self.get_last_ix()
-            self.remove_record(last_ix)
+            self.remove_record(last_ix - removed_records)
             removed_records = removed_records + 1
 
 
