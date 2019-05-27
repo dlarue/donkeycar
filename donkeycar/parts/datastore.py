@@ -61,9 +61,8 @@ class Tub(object):
             self.current_ix = 0
             logger.info('New tub created at: {}'.format(self.path))
         else:
-            msg = 'The tub path you provided doesn\'t exist and you didn\'t pass'\
-                ' any meta info (inputs & types) to create a new tub. Please '\
-                'check your tub path or provide meta info to create a new tub.'
+            msg = "The tub path you provided doesn't exist and you didnt pass any meta info (inputs & types)" + \
+                  "to create a new tub. Please check your tub path or provide meta info to create a new tub."
 
             raise AttributeError(msg)
 
@@ -158,11 +157,9 @@ class Tub(object):
             except Exception as e:
                 problems = True
                 if fix is False:
-                    logger.warning('Problem with record {} at {}: {}'
-                                   .format(ix, self.path, str(e)))
+                    logger.warning('Problem with record {} at {}: {}'.format(ix, self.path, str(e)))
                 else:
-                    logger.warning('Problem with record {} at {}, removing '\
-                            'because: {}'.format(ix, self.path, str(e)))
+                    logger.warning('Problem with record {} at {}, removing because: {}'.format(ix, self.path, str(e)))
                     self.remove_record(ix)
         if not problems:
             logger.info('No problems found.')
@@ -187,12 +184,14 @@ class Tub(object):
         """
         Removes records from the end. Assume these are continuously labeled.
         :param num_records: number or records to be removed from end
+        :return:
         """
         removed_records = 0
         last_ix = self.current_ix - 1
         while removed_records < num_records:
             self.remove_record(last_ix - removed_records)
             removed_records = removed_records + 1
+
 
     def put_record(self, data):
         """
@@ -318,8 +317,8 @@ class Tub(object):
             for index, rows in self.df.iterrows():
                 if shuffle:
                     record_dict = df.sample(n=1).to_dict(orient='record')[0]
-                else:
-                    record_dict = self.read_record(rows)
+
+                record_dict = self.read_record(rows)
 
                 if record_transform:
                     record_dict = record_transform(record_dict)
@@ -359,7 +358,7 @@ class Tub(object):
             keys = list(self.df.columns)
 
         while True:
-            record_list = [next(record_gen) for _ in range(batch_size)]
+            record_list = [ next(record_gen) for _ in range(batch_size) ]
 
             batch_arrays = {}
             for i, k in enumerate(keys):
