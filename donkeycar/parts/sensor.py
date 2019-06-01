@@ -23,8 +23,10 @@ class Odometer:
         # pigpio callback mechanics
         self._pi.set_pull_up_down(self._gpio, pigpio.PUD_UP)
         self.cb = self._pi.callback(self._gpio, pigpio.EITHER_EDGE, self.cbf)
+        print("Odometer added at gpio {}".format(gpio))
 
     def cbf(self, gpio, level, tick):
+
         """ Callback function for pigpio interrupt gpio. Signature is determined
         by pigpiod library. This function is called every time the gpio changes
         state as we specified EITHER_EDGE """
