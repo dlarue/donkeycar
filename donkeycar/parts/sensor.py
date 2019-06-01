@@ -33,7 +33,6 @@ class Odometer:
         if self._last_tick is not None:
             diff = pigpio.tickDiff(self._last_tick, tick)
             self._avg = self._weight * diff + (1.0 - self._weight) * self._avg
-            print("l={0} diff={1:5.2f} avg={2:5.2f}".format(level, diff / 1000, self._avg / 1000))
         self._last_tick = tick
 
     def run(self):
@@ -44,10 +43,8 @@ class Odometer:
         :return speed: in m / s
         """
         speed = 0.0
-        print("self._last_tick_speed={} self._last_tick={} self._avg={}"
-              .format(self._last_tick_speed, self._last_tick, self._avg))
         if self._last_tick_speed != self._last_tick and self._avg != 0.0:
-            speed = 1.0e6/ (self._avg * self._tick_per_meter)
+            speed = 1.0e6 / (self._avg * self._tick_per_meter)
         self._last_tick_speed = self._last_tick
         print("speed={0:3.2f}".format(speed))
         return speed
