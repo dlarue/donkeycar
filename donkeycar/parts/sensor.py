@@ -39,7 +39,7 @@ class Odometer:
     def run(self):
         """
         Knowing the tick time in ms and the ticks/m we calculate speed where ticks
-        are measured in ms. If ticks haven't been update since the last call we
+        are measured in mu s. If ticks haven't been update since the last call we
         assume speed is zero
         :return speed: in m / s
         """
@@ -47,7 +47,7 @@ class Odometer:
         print("self._last_tick_speed={} self._last_tick={} self._avg={}"
               .format(self._last_tick_speed, self._last_tick, self._avg))
         if self._last_tick_speed != self._last_tick and self._avg != 0.0:
-            speed = 1000.0 / (self._avg * self._tick_per_meter)
+            speed = 1.0e6/ (self._avg * self._tick_per_meter)
         self._last_tick_speed = self._last_tick
         print("speed={0:3.2f}".format(speed))
         return speed
