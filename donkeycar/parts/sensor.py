@@ -44,6 +44,8 @@ class Odometer:
         :return speed: in m / s
         """
         speed = 0.0
+        print("self._last_tick_speed={} self._last_tick={} self._avg={}"
+              .format(self._last_tick_speed, self._last_tick, self._avg))
         if self._last_tick_speed != self._last_tick and self._avg != 0.0:
             self._last_tick_speed = self._last_tick
             speed = 1000 / (self._avg * self._tick_per_meter)
