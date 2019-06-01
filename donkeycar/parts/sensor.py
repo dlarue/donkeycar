@@ -32,8 +32,8 @@ class Odometer:
         state as we specified EITHER_EDGE """
         if self._last_tick is not None:
             diff = pigpio.tickDiff(self._last_tick, tick)
-            avg = self._weight * diff + (1.0 - self._weight) * self._avg
-            print("l={0} diff={1:5.2f} avg={2:5.2f}".format(level, diff / 1000, avg / 1000))
+            self._avg = self._weight * diff + (1.0 - self._weight) * self._avg
+            print("l={0} diff={1:5.2f} avg={2:5.2f}".format(level, diff / 1000, self._avg / 1000))
         self._last_tick = tick
 
     def run(self):
