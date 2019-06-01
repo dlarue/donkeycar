@@ -47,8 +47,8 @@ class Odometer:
         print("self._last_tick_speed={} self._last_tick={} self._avg={}"
               .format(self._last_tick_speed, self._last_tick, self._avg))
         if self._last_tick_speed != self._last_tick and self._avg != 0.0:
-            self._last_tick_speed = self._last_tick
-            speed = 1000 / (self._avg * self._tick_per_meter)
+            speed = 1000.0 / (self._avg * self._tick_per_meter)
+        self._last_tick_speed = self._last_tick
         print("speed={0:3.2f}".format(speed))
         return speed
 
