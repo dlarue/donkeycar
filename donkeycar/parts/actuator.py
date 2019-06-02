@@ -144,12 +144,10 @@ class Adafruit_DCMotor_Hat:
 
 class RCReceiver:
     """
-    Class to read PWM from an RC control. Uses pigpio library.
-    This is essentially a copy of (credit)
-    http://abyz.me.uk/rpi/pigpio/code/read_PWM_py.zip. You will
-    need a voltage divider from a 5V RC receiver to a 3.3V Pi input pin.
-
-    A class to read PWM pulses and calculate their frequency.
+    Class to read PWM from an RC control and convert into a float output number.
+    Uses pigpio library. The code is essentially a copy of
+    http://abyz.me.uk/rpi/pigpio/code/read_PWM_py.zip. You will need a voltage
+    divider from a 5V RC receiver to a 3.3V Pi input pin.
     """
     MIN_OUT = -1
     MAX_OUT = 1
@@ -157,7 +155,7 @@ class RCReceiver:
     def __init__(self, gpio, invert=False, jitter=0.025, no_action=None):
         """
         :param gpio: gpio pin connected to RC channel
-        :param invert: invert value or run() within [MIN_OUT,MAX_OUT]
+        :param invert: invert value of run() within [MIN_OUT,MAX_OUT]
         :param jitter: threshold below which no signal is reported
         :param no_action: value within [MIN_OUT,MAX_OUT] if no RC signal is
                             sent. This is usually zero for throttle and steering
@@ -183,13 +181,22 @@ class RCReceiver:
         print('RCReceiver gpio ' + str(gpio) + ' created')
 
     def _update_param(self, tick):
-        """ Helper function for callback function _cbf"""
+        """ Helper function for callback function _cbf.
+        :param tick: current tick in mu s
+        :return: difference in ticks
+        """
         if self._high_tick is not None:
             t = pigpio.tickDiff(self._high_tick, tick)
             return t
 
     def _cbf(self, gpio, level, tick):
-        """ Callback function """
+        """ Callback function for pigpio interrupt gpio. Signature is determined
+            by pigpiod library. This function is called every time the gpio
+            changes state as we specified EITHER_EDGE.
+        :param gpio: gpio to listen for state changes
+        :param level: rising/falling edge
+        :param tick: # of mu s since boot, 32 bit int
+        """
         if level == 1:
             self._period = self._update_param(tick)
             self._high_tick = tick
@@ -198,22 +205,17 @@ class RCReceiver:
 
     def pulse_width(self):
         """
-        Returns the PWM pulse width in microseconds.
+        :return: the PWM pulse width in microseconds.
         """
         if self._high is not None:
             return self._high
         else:
             return 0.0
 
-    def cancel(self):
-        """
-        Cancels the reader and releases resources.
-        """
-        self._cb.cancel()
-
     def run(self):
         """
-        Donkey parts interface, returns pulse mapped into [MIN_OUT,MAX_OUT] or [MAX_OUT,MIN_OUT]
+        Donkey parts interface, returns pulse mapped into [MIN_OUT,MAX_OUT] or
+        [MAX_OUT,MIN_OUT]
         """
         # signal is a value in [0, (MAX_OUT-MIN_OUT)]
         signal = (self.pulse_width() - self._min_pwm) / (self._max_pwm - self._min_pwm) \
@@ -229,7 +231,7 @@ class RCReceiver:
         """
         Donkey parts interface
         """
-        self.cancel()
+        self._cb.cancel()
 
 
 class MockRCReceiver:

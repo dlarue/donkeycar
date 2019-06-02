@@ -12,6 +12,12 @@ class Odometer:
     magnets attached to the drive system.
     """
     def __init__(self, gpio=6, tick_per_meter=76, weight=0.5):
+        """
+        :param gpio: gpio of sensor being connected
+        :param tick_per_meter: how many signals per meter
+        :param weight: weighting of current measurement in average speed
+                        calculation
+        """
         self._gpio = gpio
         self._tick_per_meter = tick_per_meter
         self._pi = pigpio.pi()
@@ -22,14 +28,17 @@ class Odometer:
 
         # pigpio callback mechanics
         self._pi.set_pull_up_down(self._gpio, pigpio.PUD_UP)
-        self.cb = self._pi.callback(self._gpio, pigpio.EITHER_EDGE, self.cbf)
+        self._cb = self._pi.callback(self._gpio, pigpio.EITHER_EDGE, self._cbf)
         print("Odometer added at gpio {}".format(gpio))
 
-    def cbf(self, gpio, level, tick):
-
+    def _cbf(self, gpio, level, tick):
         """ Callback function for pigpio interrupt gpio. Signature is determined
         by pigpiod library. This function is called every time the gpio changes
-        state as we specified EITHER_EDGE """
+        state as we specified EITHER_EDGE.
+        :param gpio: gpio to listen for state changes
+        :param level: rising/falling edge
+        :param tick: # of mu s since boot, 32 bit int
+        """
         if self._last_tick is not None:
             diff = pigpio.tickDiff(self._last_tick, tick)
             self._avg = self._weight * diff + (1.0 - self._weight) * self._avg
@@ -37,9 +46,8 @@ class Odometer:
 
     def run(self):
         """
-        Knowing the tick time in ms and the ticks/m we calculate speed where ticks
-        are measured in mu s. If ticks haven't been update since the last call we
-        assume speed is zero
+        Knowing the tick time in mu s and the ticks/m we calculate the speed. If
+        ticks haven't been update since the last call we assume speed is zero
         :return speed: in m / s
         """
         speed = 0.0
@@ -53,5 +61,5 @@ class Odometer:
         """
         Donkey parts interface
         """
-        self.cb.cancel()
+        self._cb.cancel()
 
