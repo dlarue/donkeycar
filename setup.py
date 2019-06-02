@@ -1,13 +1,11 @@
 from setuptools import setup, find_packages
 
-import os
-
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 
 setup(name='donkeycar',
-      version='2.5.7',
+      version='2.6.0',
       description='Self driving library for python.',
       long_description=long_description,
       long_description_content_type="text/markdown",
