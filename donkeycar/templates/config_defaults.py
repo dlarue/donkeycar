@@ -23,6 +23,7 @@ MODELS_PATH = os.path.join(CAR_PATH, 'models')
 # VEHICLE
 DRIVE_LOOP_HZ = 20
 MAX_LOOPS = 100000
+MAX_SPEED = 4.0
 
 # CAMERA
 CAMERA_RESOLUTION = (144, 192)  #(height, width)

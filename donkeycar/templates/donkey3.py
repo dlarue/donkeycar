@@ -4,7 +4,7 @@ Script to drive a donkey 2 car using the RC controller instead of the web
 controller and to do a calibration of the RC throttle and steering triggers.
 
 Usage:
-    manage.py (drive)
+    manage.py (drive) [--pid]
     manage.py (calibrate)
 
 Options:
@@ -17,10 +17,11 @@ from donkeycar.parts.camera import PiCamera
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle, RCReceiver
 from donkeycar.parts.datastore import TubHandler, TubWiper
 from donkeycar.parts.clock import Timestamp
-from donkeycar.parts.transform import Lambda
+from donkeycar.parts.transform import Lambda, PIDController
+from donkeycar.parts.sensor import Odometer
 
 
-def drive(cfg):
+def drive(cfg, use_pid=False):
     """
     Construct a working robotic vehicle from many parts. Each part runs as a job
     in the Vehicle loop, calling either its run or run_threaded method depending
@@ -41,6 +42,9 @@ def drive(cfg):
     cam = PiCamera(resolution=cfg.CAMERA_RESOLUTION)
     donkey_car.add(cam, outputs=['cam/image_array'], threaded=True)
 
+    odo = Odometer()
+    donkey_car.add(odo, outputs=['car/speed'])
+
     # create the RC receiver with 3 channels
     rc_steering = RCReceiver(cfg.STEERING_RC_GPIO, invert=True)
     rc_throttle = RCReceiver(cfg.THROTTLE_RC_GPIO)
@@ -53,7 +57,8 @@ def drive(cfg):
     steering_controller = PCA9685(cfg.STEERING_CHANNEL)
     steering = PWMSteering(controller=steering_controller,
                            left_pulse=cfg.STEERING_LEFT_PWM,
-                           right_pulse=cfg.STEERING_RIGHT_PWM) 
+                           right_pulse=cfg.STEERING_RIGHT_PWM)
+    donkey_car.add(steering, inputs=['user/angle'])
 
     throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL)
     throttle = PWMThrottle(controller=throttle_controller,
@@ -61,12 +66,19 @@ def drive(cfg):
                            zero_pulse=cfg.THROTTLE_STOPPED_PWM,
                            min_pulse=cfg.THROTTLE_REVERSE_PWM)
 
-    donkey_car.add(steering, inputs=['user/angle'])
-    donkey_car.add(throttle, inputs=['user/throttle'])
+    if use_pid:
+        def scale_speed(controller_input):
+            return controller_input * cfg.MAX_SPEED
 
-    # add tub to save data
-    inputs = ['cam/image_array', 'user/angle', 'user/throttle', 'timestamp']
-    types = ['image_array', 'float', 'float', 'str']
+        rescaler = Lambda(scale_speed)
+        donkey_car.add(rescaler, inputs=['user/throttle'], outputs=['user/speed'])
+
+        # add pid controller to convert throttle value into speed
+        pid = PIDController(p=1.0, i=0.1, d=0.05, debug=False)
+        donkey_car.add(pid, inputs=['user/speed', 'car/speed'],
+                       outputs=['user/throttle'])
+
+    donkey_car.add(throttle, inputs=['user/throttle'])
 
     def recording_condition(throttle_on, throttle_val):
         return throttle_on and throttle_val > 0
@@ -76,6 +88,9 @@ def drive(cfg):
                    inputs=['user/throttle_on', 'user/throttle'],
                    outputs=['user/recording'])
 
+    # add tub to save data
+    inputs = ['cam/image_array', 'user/angle', 'user/throttle', 'timestamp']
+    types = ['image_array', 'float', 'float', 'str']
     # multiple tubs
     tub_hand = TubHandler(path=cfg.DATA_PATH)
     tub = tub_hand.new_tub_writer(inputs=inputs, types=types)
@@ -129,11 +144,11 @@ def calibrate(cfg):
 
 if __name__ == '__main__':
     args = docopt(__doc__)
-    cfg = dk.load_config()
+    config = dk.load_config()
     if args['drive']:
-        drive(cfg)
+        drive(config, use_pid=args['--pid'])
     elif args['calibrate']:
-        calibrate(cfg)
+        calibrate(config)
 
 
 

@@ -17,7 +17,7 @@ class Lambda:
         return self.f(*args, **kwargs)
 
     def shutdown(self):
-        return
+        pass
 
 
 class PIDController:
@@ -84,3 +84,6 @@ class PIDController:
             print('PID output:', round(curr_alpha, 4))
 
         return curr_alpha
+
+    def shutdown(self):
+        pass
