@@ -79,9 +79,8 @@ class PIDController:
         self.alpha = curr_alpha
 
         if (self.debug):
-            print('PID target value:', round(target_value, 4))
-            print('PID feedback value:', round(feedback, 4))
-            print('PID output:', round(curr_alpha, 4))
+            print('PID target={0:3.2f} feedback={1:3.2f} output={2:3.2f}'
+                  .format(target_value, feedback, curr_alpha))
 
         return curr_alpha
 
