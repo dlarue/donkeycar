@@ -45,6 +45,7 @@ class PIDController:
 
         # initialize the output
         self.alpha = 0
+        self.err_sum = 0
 
         # debug flag (set to True for console output)
         self.debug = debug
@@ -65,7 +66,8 @@ class PIDController:
         curr_alpha += self.Kp * error
 
         # Add integral component.
-        curr_alpha += self.Ki * (error * dt)
+        self.err_sum += self.Ki * (error * dt)
+        curr_alpha += self.err_sum
 
         # Add differential component (avoiding divide-by-zero).
         if dt > 0:
