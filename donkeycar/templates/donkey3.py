@@ -74,7 +74,7 @@ def drive(cfg, use_pid=False):
         donkey_car.add(rescaler, inputs=['user/throttle'], outputs=['user/speed'])
 
         # add pid controller to convert throttle value into speed
-        pid = PIDController(p=1.0, i=0.1, d=0.05, debug=False)
+        pid = PIDController(p=0.4, i=0.1, d=0.0, debug=False)
         donkey_car.add(pid, inputs=['user/speed', 'car/speed'],
                        outputs=['user/throttle'])
 
