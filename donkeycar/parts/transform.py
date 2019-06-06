@@ -78,7 +78,7 @@ class PIDController:
         # Update the output
         self.alpha = curr_alpha
 
-        if (self.debug):
+        if self.debug:
             print('PID target={0:3.2f} feedback={1:3.2f} output={2:3.2f}'
                   .format(target_value, feedback, curr_alpha))
 
