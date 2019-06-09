@@ -4,7 +4,7 @@ Script to drive a donkey 2 car using the RC controller instead of the web
 controller and to do a calibration of the RC throttle and steering triggers.
 
 Usage:
-    manage.py (drive) [--pid]
+    manage.py (drive) [--pid] [--cam]
     manage.py (calibrate)
 
 Options:
@@ -21,7 +21,7 @@ from donkeycar.parts.transform import Lambda, PIDController
 from donkeycar.parts.sensor import Odometer
 
 
-def drive(cfg, use_pid=False):
+def drive(cfg, use_pid=False, use_cam=True):
     """
     Construct a working robotic vehicle from many parts. Each part runs as a job
     in the Vehicle loop, calling either its run or run_threaded method depending
@@ -39,8 +39,9 @@ def drive(cfg, use_pid=False):
     clock = Timestamp()
     donkey_car.add(clock, outputs=['timestamp'])
 
-    cam = PiCamera(resolution=cfg.CAMERA_RESOLUTION)
-    donkey_car.add(cam, outputs=['cam/image_array'], threaded=True)
+    if use_cam:
+        cam = PiCamera(resolution=cfg.CAMERA_RESOLUTION)
+        donkey_car.add(cam, outputs=['cam/image_array'], threaded=True)
 
     odo = Odometer()
     donkey_car.add(odo, outputs=['car/speed'])
@@ -80,25 +81,27 @@ def drive(cfg, use_pid=False):
 
     donkey_car.add(throttle, inputs=['user/throttle'])
 
-    def recording_condition(throttle_on, throttle_val):
-        return throttle_on and throttle_val > 0
+    if use_cam:
+        def recording_condition(throttle_on, throttle_val):
+            return throttle_on and throttle_val > 0
 
-    recording_condition_part = Lambda(recording_condition)
-    donkey_car.add(recording_condition_part,
-                   inputs=['user/throttle_on', 'user/throttle'],
-                   outputs=['user/recording'])
+        recording_condition_part = Lambda(recording_condition)
+        donkey_car.add(recording_condition_part,
+                       inputs=['user/throttle_on', 'user/throttle'],
+                       outputs=['user/recording'])
 
-    # add tub to save data
-    inputs = ['cam/image_array', 'user/angle', 'user/throttle', 'timestamp']
-    types = ['image_array', 'float', 'float', 'str']
-    # multiple tubs
-    tub_hand = TubHandler(path=cfg.DATA_PATH)
-    tub = tub_hand.new_tub_writer(inputs=inputs, types=types)
-    donkey_car.add(tub, inputs=inputs, run_condition='user/recording')
+        # add tub to save data
+        inputs = ['cam/image_array', 'user/angle', 'user/throttle',
+                  'car/speed', 'timestamp']
+        types = ['image_array', 'float', 'float', 'float', 'str']
+        # multiple tubs
+        tub_hand = TubHandler(path=cfg.DATA_PATH)
+        tub = tub_hand.new_tub_writer(inputs=inputs, types=types)
+        donkey_car.add(tub, inputs=inputs, run_condition='user/recording')
 
-    # add a tub wiper that is triggered by channel 3 on the RC
-    tub_wipe = TubWiper(tub, num_records=20)
-    donkey_car.add(tub_wipe, inputs=['user/wiper_on'])
+        # add a tub wiper that is triggered by channel 3 on the RC
+        tub_wipe = TubWiper(tub, num_records=20)
+        donkey_car.add(tub_wipe, inputs=['user/wiper_on'])
 
     # run the vehicle
     donkey_car.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
@@ -146,7 +149,7 @@ if __name__ == '__main__':
     args = docopt(__doc__)
     config = dk.load_config()
     if args['drive']:
-        drive(config, use_pid=args['--pid'])
+        drive(config, use_pid=args['--pid'], use_cam=args['--cam'])
     elif args['calibrate']:
         calibrate(config)
 
