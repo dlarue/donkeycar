@@ -54,7 +54,6 @@ class Odometer:
         if self._last_tick_speed != self._last_tick and self._avg != 0.0:
             speed = 1.0e6 / (self._avg * self._tick_per_meter)
         self._last_tick_speed = self._last_tick
-        print("speed={0:3.2f}".format(speed))
         return speed
 
     def shutdown(self):
