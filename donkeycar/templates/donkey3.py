@@ -4,7 +4,7 @@ Script to drive a donkey 2 car using the RC controller instead of the web
 controller and to do a calibration of the RC throttle and steering triggers.
 
 Usage:
-    manage.py (drive) [--pid] [--cam]
+    manage.py (drive) [--pid] [--cam=<True>]
     manage.py (calibrate)
 
 Options:
@@ -39,7 +39,7 @@ def drive(cfg, use_pid=False, use_cam=True):
     clock = Timestamp()
     donkey_car.add(clock, outputs=['timestamp'])
 
-    if use_cam:
+    if use_cam or use_cam is None:
         cam = PiCamera(resolution=cfg.CAMERA_RESOLUTION)
         donkey_car.add(cam, outputs=['cam/image_array'], threaded=True)
 
