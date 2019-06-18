@@ -4,7 +4,7 @@ Script to drive a donkey 2 car using the RC controller instead of the web
 controller and to do a calibration of the RC throttle and steering triggers.
 
 Usage:
-    manage.py (drive) [--pid] [--cam=<True>]
+    manage.py (drive) [--pid] [--no_cam]
     manage.py (calibrate)
 
 Options:
@@ -21,7 +21,7 @@ from donkeycar.parts.transform import Lambda, PIDController
 from donkeycar.parts.sensor import Odometer
 
 
-def drive(cfg, use_pid=False, use_cam=True):
+def drive(cfg, use_pid=False, no_cam=None):
     """
     Construct a working robotic vehicle from many parts. Each part runs as a job
     in the Vehicle loop, calling either its run or run_threaded method depending
@@ -39,7 +39,7 @@ def drive(cfg, use_pid=False, use_cam=True):
     clock = Timestamp()
     donkey_car.add(clock, outputs=['timestamp'])
 
-    if use_cam or use_cam is None:
+    if no_cam is not None:
         cam = PiCamera(resolution=cfg.CAMERA_RESOLUTION)
         donkey_car.add(cam, outputs=['cam/image_array'], threaded=True)
 
@@ -81,7 +81,7 @@ def drive(cfg, use_pid=False, use_cam=True):
 
     donkey_car.add(throttle, inputs=['user/throttle'])
 
-    if use_cam:
+    if not no_cam:
         def recording_condition(throttle_on, throttle_val):
             return throttle_on and throttle_val > 0
 
@@ -149,7 +149,7 @@ if __name__ == '__main__':
     args = docopt(__doc__)
     config = dk.load_config()
     if args['drive']:
-        drive(config, use_pid=args['--pid'], use_cam=args['--cam'])
+        drive(config, use_pid=args['--pid'], no_cam=args['--no_cam'])
     elif args['calibrate']:
         calibrate(config)
 
