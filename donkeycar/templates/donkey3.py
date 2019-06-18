@@ -21,7 +21,7 @@ from donkeycar.parts.transform import Lambda, PIDController
 from donkeycar.parts.sensor import Odometer
 
 
-def drive(cfg, use_pid=False, no_cam=None):
+def drive(cfg, use_pid=False, no_cam=False):
     """
     Construct a working robotic vehicle from many parts. Each part runs as a job
     in the Vehicle loop, calling either its run or run_threaded method depending
@@ -39,7 +39,7 @@ def drive(cfg, use_pid=False, no_cam=None):
     clock = Timestamp()
     donkey_car.add(clock, outputs=['timestamp'])
 
-    if no_cam is not None:
+    if not no_cam:
         cam = PiCamera(resolution=cfg.CAMERA_RESOLUTION)
         donkey_car.add(cam, outputs=['cam/image_array'], threaded=True)
 
