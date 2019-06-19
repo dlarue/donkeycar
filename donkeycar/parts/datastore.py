@@ -30,7 +30,7 @@ class Tub(object):
     t=Tub(path=path, inputs=inputs, types=types)
     """
 
-    def __init__(self, path, inputs=None, types=None, user_meta=[], , allow_reverse=False):
+    def __init__(self, path, inputs=None, types=None, user_meta=[], allow_reverse=False):
 
         self.path = os.path.expanduser(path)
         #print('path_in_tub:', self.path)
