@@ -1,66 +1,48 @@
-# Install Software
+#Install Software
 
-This guide will help you to setup the software to run Donkey on your Raspberry Pi, as well as the host PC operating system of your choice.
+* [Overview](#Overview)
+* Software:
+    * [Step 1: Install Software on Host PC](install_software.md#step-1-install-software-on-host-pc)
+    * [Step 2: Install Software on Donkeycar](install_software.md#step-2-install-software-on-donkeycar)
+* [Create Donkeycar Application](/guide/create_application/)
 
-* Setup [RaspberryPi](#get-the-raspberry-pi-working)
-* Setup [Linux Host PC](#install-donkeycar-on-linux)
-* Setup [Windows Host PC](#install-donkeycar-on-windows)
-* Setup [Mac Host PC](#install-donkeycar-on-mac)
-* Setup [AWS SageMaker](#install-donkeycar-on-aws-sagemaker)
+## Overview
 
-----
-### Get the Raspberry Pi working.
+Donkeycar has components to install on a host PC. This can be a laptop, or desktop machine. The machine doesn't have to be powerful, but it will benefit from faster cpu, more ram, and an NVidia GPU. An SSD hard drive will greatly impact your training times.
 
-Before we can do anything we have to get our car's computer connected to the
-internet. The fastest way is to use the disk image created for donkey cars.
+Donkeycar software components need to be installed on the robot platform of your choice. Raspberry Pi and Jetson Nano have setup docs. But it has been known to work on Jetson TX2, Friendly Arm SBC, or almost any Debian based SBC ( single board computer ).
 
-The method for using a disk image to create a bootable SD card varies between
-operating systems. These instructions are for Ubuntu but you can see more
-instructions [here](https://www.raspberrypi.org/documentation/installation/installing-images/).
+After install, you will create the Donkeycar application from a template. This contains code that is designed for you to customize for your particular case. Don't worry, we will get you started with some useful defaults.
 
-1. Download prebuilt zipped disk image for [RPi 3B and 3B+](https://drive.google.com/open?id=1vr4nEXLEh4xByKAXik8KhK3o-XWgo2fQ) for [RPi Zero](https://drive.google.com/open?id=1otqNRBs1kqNJYocCp4kbMjcRKWE2zW7A) (1.1GB).
-2. Unzip the disk image.
-3. Plug your SD card into your computer.
-4. Open the "Startup Disk Creator" application.
-5. Select your source disk image as the one you unzipped earlier.
-6. Select your SD card as the disk to use.
-7. Click "Make startup disk".
+Next we will train the Donkeycar to drive on it's own based on your driving style! This uses a supervised learning technique often referred to as behavioral cloning.
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/BQY9IgAxOO0" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+This is not the only method for getting your Donkeycar to drive itself. But it requires the least amount of hardware and least technical knowledge. Then you can explore other techniques in this Ai mobile laboratory called Donkeycar!
+
+## Step 1: Install Software on Host PC
+
+When controlling your Donkey via behavioral cloning, you will need to setup a host pc to train your machine learning model from the data collected on the robot. Choose a setup that matches your computer OS.
 
 
-### Setup the Pi's WiFi for first boot
+* Setup [Linux Host PC](host_pc/setup_ubuntu.md)
+![donkey](/assets/logos/linux_logo.png)
+* Setup [Windows Host PC](host_pc/setup_windows.md)
+![donkey](/assets/logos/windows_logo.png)
+* Setup [Mac Host PC](host_pc/setup_mac.md)
+![donkey](/assets/logos/apple_logo.jpg)
 
-We can create a special file which will be used to login to wifi on first boot. More reading [here](https://raspberrypi.stackexchange.com/questions/10251/prepare-sd-card-for-wifi-on-headless-pi), but we will walk you through it.
 
-On Windows, with your memory card image burned and memory disc still inserted, you should see two drives, which are actually two partitions on the mem disc. One is labeled __boot__. On Mac and Linux, you should also have access to the __boot__ partition of the mem disc. This is formated with the common FAT type and is where we will edit some files to help it find and log-on to your wifi on it's first boot.
+# Step 2: Install Software On Donkeycar
 
-* Start a text editor: `gedit` on Linux. Notepad on Windows. TextEdit on a Mac.
-* Paste and edit this contents to match your wifi:
-```
-country=US
-ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
-update_config=1
+This guide will help you to setup the software to run Donkeycar on your Raspberry Pi or Jetson Nano. Choose a setup that matches your SBC type. (SBC = single board computer)
 
-network={
-    ssid="<your network name>"
-    psk="<your password>"
-}
+* Setup [RaspberryPi](robot_sbc/setup_raspberry_pi.md)
+![donkey](/assets/logos/rpi_logo.png)
 
-```
+* Setup [Jetson Nano](robot_sbc/setup_jetson_nano.md)
+![donkey](/assets/logos/nvidia_logo.png)
 
-Replace `<your network name>` with the ID of your network. Leave the quotes. I've seen problems when the network name contained an apostrophe, like "Joe's iPhone".
-Replace `<your password>` with your password, leaving it surrounded by quotes.
-If it bothers you to leave your password unencrypted, you may change the [contents later](https://unix.stackexchange.com/questions/278946/hiding-passwords-in-wpa-supplicant-conf-with-wpa-eap-and-mschap-v2) once you've gotten the pi to boot and log-in.
-
-* Save this file to the root of __boot__ partition with the filename `wpa_supplicant.conf`. On first boot, this file will be moved to `/etc/wpa_supplicant/wpa_supplicant.conf` where it may be edited later.
-
-##### Setup Pi's Hostname
-We can also setup the hostname so that your Pi easier to find once on the network. If yours is the only Pi on the network, then you can find it with
-
-```
-ping donkeypi.local
-```
-
-once it's booted. If there are many other Pi's on the network, then this will have problems. If you are on a Linux machine, or are able to edit the UUID partition, then you can edit the `/etc/hostname` and `/etc/hosts` files now to make finding your pi on the network easier after boot. Edit those to replace `raspberrypi` with a name of your choosing. Use all lower case, no special characters, no hyphens, no underscores `_`.
 
 ```
 sudo vi /media/userID/UUID/etc/hostname
