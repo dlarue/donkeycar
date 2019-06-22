@@ -99,7 +99,7 @@ class PIDController:
 
         # Add differential component (avoiding divide-by-zero).
         if dt > 0:
-            curr_alpha += -self.Kd * ((self.difError) / float(dt))
+            curr_alpha += -self.Kd * (self.difError / float(dt))
 
         # Maintain memory for next loop.
         self.prev_tm = curr_tm
@@ -110,8 +110,7 @@ class PIDController:
         self.alpha = curr_alpha
 
         if self.debug:
-            print('PID target={0:3.2f} feedback={1:3.2f} output={2:3.2f}'
-                  .format(target_value, feedback, curr_alpha))
+            print('PID error={0:3.2f} output={2:3.2f}'.format(err, curr_alpha))
 
         return curr_alpha
 
