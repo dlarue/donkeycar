@@ -178,7 +178,7 @@ def drive(cfg, model_path=None, model_type=None):
 
     print("You can now go to <your pi ip address>:8887 to drive your car.")
 
-    #run the vehicle for 20 seconds
+    # run the vehicle for 20 seconds
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ, 
             max_loop_count=cfg.MAX_LOOPS)
 
