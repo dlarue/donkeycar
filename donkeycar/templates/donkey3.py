@@ -74,10 +74,15 @@ def drive(cfg, use_pid=False, no_cam=False):
         rescaler = Lambda(scale_speed)
         donkey_car.add(rescaler, inputs=['user/throttle'], outputs=['user/speed'])
 
+        def pid_error(car_speed, user_speed):
+            return car_speed - user_speed
+
+        pid = Lambda(pid_error)
+        donkey_car.add(pid, inputs=['car/speed', 'user/speed'], outputs=['pid/error'])
+
         # add pid controller to convert throttle value into speed
         pid = PIDController(p=0.4, i=0.1, d=0.0, debug=False)
-        donkey_car.add(pid, inputs=['user/speed', 'car/speed'],
-                       outputs=['user/throttle'])
+        donkey_car.add(pid, inputs=['pid/error'], outputs=['user/throttle'])
 
     donkey_car.add(throttle, inputs=['user/throttle'])
 
