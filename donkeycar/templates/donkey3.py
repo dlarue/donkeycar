@@ -32,7 +32,7 @@ def drive(cfg, use_pid=False, no_cam=False):
     input.
     """
     # setup logger
-    dk.log.setup()
+    # dk.log.setup()
 
     donkey_car = dk.vehicle.Vehicle()
 
@@ -40,7 +40,7 @@ def drive(cfg, use_pid=False, no_cam=False):
     donkey_car.add(clock, outputs=['timestamp'])
 
     if not no_cam:
-        cam = PiCamera(resolution=cfg.CAMERA_RESOLUTION)
+        cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
         donkey_car.add(cam, outputs=['cam/image_array'], threaded=True)
 
     odo = Odometer()
