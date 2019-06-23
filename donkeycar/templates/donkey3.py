@@ -182,8 +182,14 @@ def test(cfg):
     donkey_car.add(clock, outputs=['timestamp'])
     cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
     donkey_car.add(cam, outputs=['cam/image_array'], threaded=True)
+
+    odo = Odometer()
+    donkey_car.add(odo, outputs=['car/speed'])
+
     donkey_car.add(TypePrinter('Timestamp'), inputs=['timestamp'])
     donkey_car.add(TypePrinter('Image'), inputs=['cam/image_array'])
+    donkey_car.add(TypePrinter('Speed'), inputs=['car/speed'])
+
     donkey_car.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
 
 
