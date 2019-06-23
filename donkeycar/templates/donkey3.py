@@ -20,6 +20,7 @@ from donkeycar.parts.datastore import TubHandler, TubWiper
 from donkeycar.parts.clock import Timestamp
 from donkeycar.parts.transform import Lambda, PIDController
 from donkeycar.parts.sensor import Odometer
+import numpy as np
 
 
 class TypePrinter:
@@ -184,6 +185,7 @@ def test(cfg):
     donkey_car.add(TypePrinter('Timestamp'), inputs=['timestamp'])
     donkey_car.add(TypePrinter('Image'), inputs=['cam/image_array'])
     donkey_car.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
+
 
 if __name__ == '__main__':
     args = docopt(__doc__)
