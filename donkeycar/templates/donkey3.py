@@ -7,12 +7,14 @@ Usage:
     manage.py (drive) [--pid] [--no_cam] [--model=<path_to_pilot>]
     manage.py (calibrate)
     manage.py (test) [--model=<path_to_pilot>]
+    manage.py (test2) [--model=<path_to_pilot>]
 
 Options:
     -h --help        Show this screen.
 """
 
 from docopt import docopt
+import time
 import donkeycar as dk
 from donkeycar.parts.camera import PiCamera
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle, RCReceiver
@@ -20,7 +22,7 @@ from donkeycar.parts.datastore import TubHandler, TubWiper
 from donkeycar.parts.clock import Timestamp
 from donkeycar.parts.transform import Lambda, PIDController
 from donkeycar.parts.sensor import Odometer
-import numpy as np
+from donkeycar.parts.controller import LocalWebController
 
 
 class TypePrinter:
@@ -204,6 +206,67 @@ def test(cfg, model_path=None):
     donkey_car.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
 
 
+def test2(cfg, model_path=None, model_type='linear'):
+    '''
+    Construct a working robotic vehicle from many parts.
+    Each part runs as a job in the Vehicle loop, calling either
+    it's run or run_threaded method depending on the constructor flag `threaded`.
+    All parts are updated one after another at the framerate given in
+    cfg.DRIVE_LOOP_HZ assuming each part finishes processing in a timely manner.
+    Parts may have named outputs and inputs. The framework handles passing named outputs
+    to parts requesting the same named input.
+    '''
+
+    if model_type is None:
+        model_type = cfg.DEFAULT_MODEL_TYPE
+
+    # Initialize car
+    V = dk.vehicle.Vehicle()
+
+    cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
+    V.add(cam, outputs=['cam/image_array'], threaded=True)
+
+    V.add(TypePrinter('Image'), inputs=['cam/image_array'])
+
+    V.add(LocalWebController(),
+          inputs=['cam/image_array'],
+          outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
+          threaded=True)
+
+    # See if we should even run the pilot module.
+    # This is only needed because the part run_condition only accepts boolean
+    class PilotCondition:
+        def run(self, mode):
+            if mode == 'user':
+                return False
+            else:
+                return True
+
+    V.add(PilotCondition(), inputs=['user/mode'], outputs=['run_pilot'])
+
+    inputs = ['cam/image_array']
+
+    def load_model(kl, model_path):
+        start = time.time()
+        try:
+            print('loading model', model_path)
+            kl.load(model_path)
+            print('finished loading in %s sec.' % (str(time.time() - start)))
+        except Exception as e:
+            print(e)
+            print('ERR>> problems loading model', model_path)
+
+    if model_path:
+        # When we have a model, first create an appropriate Keras part
+        kl = dk.utils.get_model_by_type(model_type, cfg)
+        load_model(kl, model_path)
+        outputs = ['pilot/angle', 'pilot/throttle']
+        V.add(kl, inputs=inputs, outputs=outputs, run_condition='run_pilot')
+
+    # run the vehicle for 20 seconds
+    V.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
+
+
 if __name__ == '__main__':
     args = docopt(__doc__)
     config = dk.load_config()
@@ -214,6 +277,8 @@ if __name__ == '__main__':
         calibrate(config)
     elif args['test']:
         test(config, model_path=args['--model'])
+    elif args['test2']:
+        test2(config, model_path=args['--model'])
 
 
 
