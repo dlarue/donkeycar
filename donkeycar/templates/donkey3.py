@@ -31,7 +31,7 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None):
     framework handles passing named outputs to parts requesting the same named
     input.
     """
-    assert model_path is None if no_cam, "Can't drive with pilot but w/o camera"
+    if no_cam assert model_path is None, "Can't drive with pilot but w/o camera"
 
     donkey_car = dk.vehicle.Vehicle()
 
