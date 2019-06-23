@@ -183,7 +183,7 @@ def test(cfg):
     donkey_car.add(cam, outputs=['cam/image_array'], threaded=True)
     donkey_car.add(TypePrinter('Timestamp'), inputs=['timestamp'])
     donkey_car.add(TypePrinter('Image'), inputs=['cam/image_array'])
-
+    donkey_car.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
 
 if __name__ == '__main__':
     args = docopt(__doc__)
