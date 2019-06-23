@@ -28,7 +28,6 @@ from donkeycar.parts.transform import Lambda, TriggeredCallback, DelayedTrigger
 from donkeycar.parts.datastore import TubHandler
 from donkeycar.parts.controller import JoystickController
 from donkeycar.parts.throttle_filter import ThrottleFilter
-from donkeycar.parts.behavior import BehaviorPart
 from donkeycar.parts.file_watcher import FileWatcher
 from donkeycar.parts.launch import AiLaunch
 
@@ -262,44 +261,6 @@ def test2(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
     V.add(PilotCondition(), inputs=['user/mode'], outputs=['run_pilot'])
 
-    def get_record_alert_color(num_records):
-        col = (0, 0, 0)
-        for count, color in cfg.RECORD_ALERT_COLOR_ARR:
-            if num_records >= count:
-                col = color
-        return col
-
-    class RecordTracker:
-        def __init__(self):
-            self.last_num_rec_print = 0
-            self.dur_alert = 0
-            self.force_alert = 0
-
-        def run(self, num_records):
-            if num_records is None:
-                return 0
-
-            if self.last_num_rec_print != num_records or self.force_alert:
-                self.last_num_rec_print = num_records
-
-                if num_records % 10 == 0:
-                    print("recorded", num_records, "records")
-
-                if num_records % cfg.REC_COUNT_ALERT == 0 or self.force_alert:
-                    self.dur_alert = num_records // cfg.REC_COUNT_ALERT * cfg.REC_COUNT_ALERT_CYC
-                    self.force_alert = 0
-
-            if self.dur_alert > 0:
-                self.dur_alert -= 1
-
-            if self.dur_alert != 0:
-                return get_record_alert_color(num_records)
-
-            return 0
-
-    rec_tracker_part = RecordTracker()
-    V.add(rec_tracker_part, inputs=["tub/num_records"], outputs=['records/alert'])
-
     inputs = ['cam/image_array']
 
     def load_model(kl, model_path):
@@ -312,58 +273,20 @@ def test2(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             print(e)
             print('ERR>> problems loading model', model_path)
 
-    def load_weights(kl, weights_path):
-        start = time.time()
-        try:
-            print('loading model weights', weights_path)
-            kl.model.load_weights(weights_path)
-            print('finished loading in %s sec.' % (str(time.time() - start)))
-        except Exception as e:
-            print(e)
-            print('ERR>> problems loading weights', weights_path)
-
-    def load_model_json(kl, json_fnm):
-        start = time.time()
-        print('loading model json', json_fnm)
-        import keras
-        try:
-            with open(json_fnm, 'r') as handle:
-                contents = handle.read()
-                kl.model = keras.models.model_from_json(contents)
-            print('finished loading json in %s sec.' % (str(time.time() - start)))
-        except Exception as e:
-            print(e)
-            print("ERR>> problems loading model json", json_fnm)
-
     if model_path:
         # When we have a model, first create an appropriate Keras part
         kl = dk.utils.get_model_by_type(model_type, cfg)
 
         model_reload_cb = None
 
-        if '.h5' in model_path:
-            # when we have a .h5 extension
-            # load everything from the model file
-            load_model(kl, model_path)
+        # when we have a .h5 extension
+        # load everything from the model file
+        load_model(kl, model_path)
 
-            def reload_model(filename):
-                load_model(kl, filename)
+        def reload_model(filename):
+            load_model(kl, filename)
 
-            model_reload_cb = reload_model
-
-        elif '.json' in model_path:
-            # when we have a .json extension
-            # load the model from their and look for a matching
-            # .wts file with just weights
-            load_model_json(kl, model_path)
-            weights_path = model_path.replace('.json', '.weights')
-            load_weights(kl, weights_path)
-
-            def reload_weights(filename):
-                weights_path = filename.replace('.json', '.weights')
-                load_weights(kl, weights_path)
-
-            model_reload_cb = reload_weights
+        model_reload_cb = reload_model
 
         # this part will signal visual LED, if connected
         V.add(FileWatcher(model_path, verbose=True), outputs=['modelfile/modified'])
@@ -375,12 +298,7 @@ def test2(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
         outputs = ['pilot/angle', 'pilot/throttle']
 
-        if cfg.TRAIN_LOCALIZER:
-            outputs.append("pilot/loc")
-
-        V.add(kl, inputs=inputs,
-              outputs=outputs,
-              run_condition='run_pilot')
+        V.add(kl, inputs=inputs, outputs=outputs, run_condition='run_pilot')
 
         # Choose what inputs should change the car.
 
@@ -402,155 +320,24 @@ def test2(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
                   'pilot/angle', 'pilot/throttle'],
           outputs=['angle', 'throttle'])
 
-    # to give the car a boost when starting ai mode in a race.
-    aiLauncher = AiLaunch(cfg.AI_LAUNCH_DURATION, cfg.AI_LAUNCH_THROTTLE)
+    from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 
-    V.add(aiLauncher,
-          inputs=['user/mode', 'throttle'],
-          outputs=['throttle'])
+    steering_controller = PCA9685(cfg.STEERING_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
+    steering = PWMSteering(controller=steering_controller,
+                           left_pulse=cfg.STEERING_LEFT_PWM,
+                           right_pulse=cfg.STEERING_RIGHT_PWM)
 
-    if isinstance(ctr, JoystickController):
-        ctr.set_button_down_trigger(cfg.AI_LAUNCH_ENABLE_BUTTON, aiLauncher.do_enable)
+    throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
+    throttle = PWMThrottle(controller=throttle_controller,
+                           max_pulse=cfg.THROTTLE_FORWARD_PWM,
+                           zero_pulse=cfg.THROTTLE_STOPPED_PWM,
+                           min_pulse=cfg.THROTTLE_REVERSE_PWM)
 
-    class AiRunCondition:
-        '''
-        A bool part to let us know when ai is running.
-        '''
-
-        def run(self, mode):
-            if mode == "user":
-                return False
-            return True
-
-    V.add(AiRunCondition(), inputs=['user/mode'], outputs=['ai_running'])
-
-    # Ai Recording
-    class AiRecordingCondition:
-        '''
-        return True when ai mode, otherwize respect user mode recording flag
-        '''
-
-        def run(self, mode, recording):
-            if mode == 'user':
-                return recording
-            return True
-
-    if cfg.RECORD_DURING_AI:
-        V.add(AiRecordingCondition(), inputs=['user/mode', 'recording'], outputs=['recording'])
-
-    # Drive train setup
-    if cfg.DONKEY_GYM:
-        pass
-
-    elif cfg.DRIVE_TRAIN_TYPE == "SERVO_ESC":
-        from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
-
-        steering_controller = PCA9685(cfg.STEERING_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
-        steering = PWMSteering(controller=steering_controller,
-                               left_pulse=cfg.STEERING_LEFT_PWM,
-                               right_pulse=cfg.STEERING_RIGHT_PWM)
-
-        throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
-        throttle = PWMThrottle(controller=throttle_controller,
-                               max_pulse=cfg.THROTTLE_FORWARD_PWM,
-                               zero_pulse=cfg.THROTTLE_STOPPED_PWM,
-                               min_pulse=cfg.THROTTLE_REVERSE_PWM)
-
-        V.add(steering, inputs=['angle'])
-        V.add(throttle, inputs=['throttle'])
-
-
-    elif cfg.DRIVE_TRAIN_TYPE == "DC_STEER_THROTTLE":
-        from donkeycar.parts.actuator import Mini_HBridge_DC_Motor_PWM
-
-        steering = Mini_HBridge_DC_Motor_PWM(cfg.HBRIDGE_PIN_LEFT, cfg.HBRIDGE_PIN_RIGHT)
-        throttle = Mini_HBridge_DC_Motor_PWM(cfg.HBRIDGE_PIN_FWD, cfg.HBRIDGE_PIN_BWD)
-
-        V.add(steering, inputs=['angle'])
-        V.add(throttle, inputs=['throttle'])
-
-
-    elif cfg.DRIVE_TRAIN_TYPE == "DC_TWO_WHEEL":
-        from donkeycar.parts.actuator import TwoWheelSteeringThrottle, Mini_HBridge_DC_Motor_PWM
-
-        left_motor = Mini_HBridge_DC_Motor_PWM(cfg.HBRIDGE_PIN_LEFT_FWD, cfg.HBRIDGE_PIN_LEFT_BWD)
-        right_motor = Mini_HBridge_DC_Motor_PWM(cfg.HBRIDGE_PIN_RIGHT_FWD, cfg.HBRIDGE_PIN_RIGHT_BWD)
-        two_wheel_control = TwoWheelSteeringThrottle()
-
-        V.add(two_wheel_control,
-              inputs=['throttle', 'angle'],
-              outputs=['left_motor_speed', 'right_motor_speed'])
-
-        V.add(left_motor, inputs=['left_motor_speed'])
-        V.add(right_motor, inputs=['right_motor_speed'])
-
-    elif cfg.DRIVE_TRAIN_TYPE == "SERVO_HBRIDGE_PWM":
-        from donkeycar.parts.actuator import ServoBlaster, PWMSteering
-        steering_controller = ServoBlaster(cfg.STEERING_CHANNEL)  # really pin
-        # PWM pulse values should be in the range of 100 to 200
-        assert (cfg.STEERING_LEFT_PWM <= 200)
-        assert (cfg.STEERING_RIGHT_PWM <= 200)
-        steering = PWMSteering(controller=steering_controller,
-                               left_pulse=cfg.STEERING_LEFT_PWM,
-                               right_pulse=cfg.STEERING_RIGHT_PWM)
-
-        from donkeycar.parts.actuator import Mini_HBridge_DC_Motor_PWM
-        motor = Mini_HBridge_DC_Motor_PWM(cfg.HBRIDGE_PIN_FWD, cfg.HBRIDGE_PIN_BWD)
-
-        V.add(steering, inputs=['angle'])
-        V.add(motor, inputs=["throttle"])
-
-    # add tub to save data
-
-    inputs = ['cam/image_array',
-              'user/angle', 'user/throttle',
-              'user/mode']
-
-    types = ['image_array',
-             'float', 'float',
-             'str']
-
-    if cfg.TRAIN_BEHAVIORS:
-        inputs += ['behavior/state', 'behavior/label', "behavior/one_hot_state_array"]
-        types += ['int', 'str', 'vector']
-
-    if cfg.HAVE_IMU:
-        inputs += ['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
-                   'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z']
-
-        types += ['float', 'float', 'float',
-                  'float', 'float', 'float']
-
-    if cfg.RECORD_DURING_AI:
-        inputs += ['pilot/angle', 'pilot/throttle']
-        types += ['float', 'float']
-
-    th = TubHandler(path=cfg.DATA_PATH)
-    tub = th.new_tub_writer(inputs=inputs, types=types, user_meta=meta)
-    V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
-
-    if cfg.PUB_CAMERA_IMAGES:
-        from donkeycar.parts.network import TCPServeValue
-        from donkeycar.parts.image import ImgArrToJpg
-        pub = TCPServeValue("camera")
-        V.add(ImgArrToJpg(), inputs=['cam/image_array'], outputs=['jpg/bin'])
-        V.add(pub, inputs=['jpg/bin'])
+    V.add(steering, inputs=['angle'])
+    V.add(throttle, inputs=['throttle'])
 
     if type(ctr) is LocalWebController:
         print("You can now go to <your pi ip address>:8887 to drive your car.")
-    elif isinstance(ctr, JoystickController):
-        print("You can now move your joystick to drive your car.")
-        # tell the controller about the tub
-        ctr.set_tub(tub)
-
-        if cfg.BUTTON_PRESS_NEW_TUB:
-            def new_tub_dir():
-                V.parts.pop()
-                tub = th.new_tub_writer(inputs=inputs, types=types, user_meta=meta)
-                V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
-                ctr.set_tub(tub)
-
-            ctr.set_button_down_trigger('cross', new_tub_dir)
 
     # run the vehicle for 20 seconds
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
