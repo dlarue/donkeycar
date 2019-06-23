@@ -4,7 +4,7 @@ Script to drive a donkey 2 car using the RC controller instead of the web
 controller and to do a calibration of the RC throttle and steering triggers.
 
 Usage:
-    manage.py (drive) [--pid] [--no_cam]
+    manage.py (drive) [--pid] [--no_cam] [--model=<path_to_pilot>]
     manage.py (calibrate)
 
 Options:
@@ -167,7 +167,8 @@ if __name__ == '__main__':
     args = docopt(__doc__)
     config = dk.load_config()
     if args['drive']:
-        drive(config, use_pid=args['--pid'], no_cam=args['--no_cam'])
+        drive(config, use_pid=args['--pid'], no_cam=args['--no_cam'],
+              model_path=args['--model'])
     elif args['calibrate']:
         calibrate(config)
 
