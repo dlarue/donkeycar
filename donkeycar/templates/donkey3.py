@@ -190,12 +190,13 @@ def test(cfg, model_path=None):
     donkey_car.add(TypePrinter('Image'), inputs=['cam/image_array'])
     donkey_car.add(TypePrinter('Speed'), inputs=['car/speed'])
 
+    inputs = ['cam/image_array']
     if model_path is not None:
         print("Using auto-pilot")
         kl = dk.utils.get_model_by_type('linear', cfg)
         kl.load(model_path)
         outputs = ['pilot/angle', 'pilot/throttle']
-        donkey_car.add(kl, inputs=['cam/image_array'], outputs=outputs)
+        donkey_car.add(kl, inputs=inputs, outputs=outputs)
 
     donkey_car.add(TypePrinter('pilot/angle'), inputs=['pilot/angle'])
     donkey_car.add(TypePrinter('pilot/throttle'), inputs=['pilot/throttle'])
