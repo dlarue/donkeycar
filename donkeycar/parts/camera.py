@@ -31,7 +31,7 @@ class PiCamera(BaseCamera):
         self.image_d = image_d
 
         print('PiCamera loaded...warming camera')
-        time.sleep(2)
+        time.sleep(1)
 
 
     def run(self):
