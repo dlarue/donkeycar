@@ -248,7 +248,7 @@ def test2(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     # This is only needed because the part run_condition only accepts boolean
     class PilotCondition:
         def run(self, mode):
-            return mode != 'user'
+            return True
 
     V.add(PilotCondition(), inputs=['user/mode'], outputs=['run_pilot'])
 
