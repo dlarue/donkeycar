@@ -237,6 +237,21 @@ def test2(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     V.add(cam, inputs=inputs, outputs=['cam/image_array'], threaded=threaded)
     V.add(TypePrinter('Image'), inputs=['cam/image_array'])
 
+    ctr = LocalWebController()
+
+    V.add(ctr,
+          inputs=['cam/image_array'],
+          outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
+          threaded=True)
+
+    # See if we should even run the pilot module.
+    # This is only needed because the part run_condition only accepts boolean
+    class PilotCondition:
+        def run(self, mode):
+            return mode != 'user'
+
+    V.add(PilotCondition(), inputs=['user/mode'], outputs=['run_pilot'])
+
     def load_model(kl, model_path):
         start = time.time()
         try:
@@ -263,7 +278,11 @@ def test2(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         V.add(TriggeredCallback(model_path, model_reload_cb), inputs=["modelfile/reload"], run_condition="ai_running")
         inputs = ['cam/image_array']
         outputs = ['pilot/angle', 'pilot/throttle']
-        V.add(kl, inputs=inputs, outputs=outputs)
+        V.add(kl, inputs=inputs, outputs=outputs, run_condition='run_pilot')
+
+
+    if type(ctr) is LocalWebController:
+        print("You can now go to <your pi ip address>:8887 to drive your car.")
 
     # run the vehicle for 20 seconds
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
