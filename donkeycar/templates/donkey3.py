@@ -224,9 +224,6 @@ def test2(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     to parts requesting the same named input.
     '''
 
-    if model_type is None:
-        model_type = cfg.DEFAULT_MODEL_TYPE
-
     # Initialize car
     V = dk.vehicle.Vehicle()
 
@@ -246,22 +243,13 @@ def test2(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
           threaded=True)
 
-    # this throttle filter will allow one tap back for esc reverse
-    th_filter = ThrottleFilter()
-    V.add(th_filter, inputs=['user/throttle'], outputs=['user/throttle'])
-
     # See if we should even run the pilot module.
     # This is only needed because the part run_condition only accepts boolean
     class PilotCondition:
         def run(self, mode):
-            if mode == 'user':
-                return False
-            else:
-                return True
+            return mode != 'user'
 
     V.add(PilotCondition(), inputs=['user/mode'], outputs=['run_pilot'])
-
-    inputs = ['cam/image_array']
 
     def load_model(kl, model_path):
         start = time.time()
@@ -275,66 +263,22 @@ def test2(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
     if model_path:
         # When we have a model, first create an appropriate Keras part
-        kl = dk.utils.get_model_by_type(model_type, cfg)
-
-        model_reload_cb = None
-
-        # when we have a .h5 extension
-        # load everything from the model file
-        load_model(kl, model_path)
+        kl = dk.utils.get_model_by_type('linear', cfg)
+        kl.load(model_path)
 
         def reload_model(filename):
             load_model(kl, filename)
 
         model_reload_cb = reload_model
 
-        # this part will signal visual LED, if connected
-        V.add(FileWatcher(model_path, verbose=True), outputs=['modelfile/modified'])
-
         # these parts will reload the model file, but only when ai is running so we don't interrupt user driving
         V.add(FileWatcher(model_path), outputs=['modelfile/dirty'], run_condition="ai_running")
         V.add(DelayedTrigger(100), inputs=['modelfile/dirty'], outputs=['modelfile/reload'], run_condition="ai_running")
         V.add(TriggeredCallback(model_path, model_reload_cb), inputs=["modelfile/reload"], run_condition="ai_running")
-
+        inputs = ['cam/image_array']
         outputs = ['pilot/angle', 'pilot/throttle']
-
         V.add(kl, inputs=inputs, outputs=outputs, run_condition='run_pilot')
 
-        # Choose what inputs should change the car.
-
-    class DriveMode:
-        def run(self, mode,
-                user_angle, user_throttle,
-                pilot_angle, pilot_throttle):
-            if mode == 'user':
-                return user_angle, user_throttle
-
-            elif mode == 'local_angle':
-                return pilot_angle, user_throttle
-
-            else:
-                return pilot_angle, pilot_throttle * cfg.AI_THROTTLE_MULT
-
-    V.add(DriveMode(),
-          inputs=['user/mode', 'user/angle', 'user/throttle',
-                  'pilot/angle', 'pilot/throttle'],
-          outputs=['angle', 'throttle'])
-
-    from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
-
-    steering_controller = PCA9685(cfg.STEERING_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
-    steering = PWMSteering(controller=steering_controller,
-                           left_pulse=cfg.STEERING_LEFT_PWM,
-                           right_pulse=cfg.STEERING_RIGHT_PWM)
-
-    throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
-    throttle = PWMThrottle(controller=throttle_controller,
-                           max_pulse=cfg.THROTTLE_FORWARD_PWM,
-                           zero_pulse=cfg.THROTTLE_STOPPED_PWM,
-                           min_pulse=cfg.THROTTLE_REVERSE_PWM)
-
-    V.add(steering, inputs=['angle'])
-    V.add(throttle, inputs=['throttle'])
 
     if type(ctr) is LocalWebController:
         print("You can now go to <your pi ip address>:8887 to drive your car.")
