@@ -190,7 +190,7 @@ def test(cfg, model_path=None):
     clock = Timestamp()
     donkey_car.add(clock, outputs=['timestamp'])
     cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
-    donkey_car.add(cam, outputs=['cam/image_array'], threaded=True)
+    donkey_car.add(cam, inputs=[], outputs=['cam/image_array'], threaded=True)
 
     odo = Odometer()
     donkey_car.add(odo, outputs=['car/speed'])
