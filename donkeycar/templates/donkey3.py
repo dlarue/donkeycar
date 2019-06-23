@@ -199,13 +199,20 @@ def test(cfg, model_path=None):
     donkey_car.add(TypePrinter('Image'), inputs=['cam/image_array'])
     donkey_car.add(TypePrinter('Speed'), inputs=['car/speed'])
 
-    inputs = ['cam/image_array']
     if model_path is not None:
         print("Using auto-pilot")
         kl = dk.utils.get_model_by_type('linear', cfg)
         kl.load(model_path)
+
+        class CheckValidFrame:
+            def run(self, image):
+                return image is not None
+
+        dk.add(CheckValidFrame(), inputs=['cam/image'], outputs=['cam/valid'])
+
+        inputs = ['cam/image_array']
         outputs = ['pilot/angle', 'pilot/throttle']
-        donkey_car.add(kl, inputs=inputs, outputs=outputs)
+        donkey_car.add(kl, inputs=inputs, outputs=outputs, run_condition='cam/valid')
 
     donkey_car.add(TypePrinter('pilot/angle'), inputs=['pilot/angle'])
     donkey_car.add(TypePrinter('pilot/throttle'), inputs=['pilot/throttle'])
