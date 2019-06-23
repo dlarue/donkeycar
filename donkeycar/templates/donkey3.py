@@ -6,7 +6,7 @@ controller and to do a calibration of the RC throttle and steering triggers.
 Usage:
     manage.py (drive) [--pid] [--no_cam] [--model=<path_to_pilot>]
     manage.py (calibrate)
-    manage.py (test)
+    manage.py (test) [--model=<path_to_pilot>]
 
 Options:
     -h --help        Show this screen.
@@ -176,7 +176,7 @@ def calibrate(cfg):
     donkey_car.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
 
 
-def test(cfg):
+def test(cfg, model_path=None):
     donkey_car = dk.vehicle.Vehicle()
     clock = Timestamp()
     donkey_car.add(clock, outputs=['timestamp'])
@@ -190,6 +190,16 @@ def test(cfg):
     donkey_car.add(TypePrinter('Image'), inputs=['cam/image_array'])
     donkey_car.add(TypePrinter('Speed'), inputs=['car/speed'])
 
+    if model_path is not None:
+        print("Using auto-pilot")
+        kl = dk.utils.get_model_by_type('linear', cfg)
+        kl.load(model_path)
+        outputs = ['pilot/angle', 'pilot/throttle']
+        donkey_car.add(kl, inputs=['cam/image_array'], outputs=outputs)
+
+    donkey_car.add(TypePrinter('pilot/angle'), inputs=['pilot/angle'])
+    donkey_car.add(TypePrinter('pilot/throttle'), inputs=['pilot/throttle'])
+
     donkey_car.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
 
 
@@ -202,7 +212,7 @@ if __name__ == '__main__':
     elif args['calibrate']:
         calibrate(config)
     elif args['test']:
-        test(config)
+        test(config, model_path=args['--model'])
 
 
 
