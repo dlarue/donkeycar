@@ -21,7 +21,7 @@ from donkeycar.parts.transform import Lambda, PIDController
 from donkeycar.parts.sensor import Odometer
 
 
-def drive(cfg, use_pid=False, no_cam=False):
+def drive(cfg, use_pid=False, no_cam=False, model_path=None):
     """
     Construct a working robotic vehicle from many parts. Each part runs as a job
     in the Vehicle loop, calling either its run or run_threaded method depending
@@ -31,8 +31,7 @@ def drive(cfg, use_pid=False, no_cam=False):
     framework handles passing named outputs to parts requesting the same named
     input.
     """
-    # setup logger
-    # dk.log.setup()
+    assert model_path is None if no_cam, "Can't drive with pilot but w/o camera"
 
     donkey_car = dk.vehicle.Vehicle()
 
@@ -45,6 +44,15 @@ def drive(cfg, use_pid=False, no_cam=False):
 
     odo = Odometer()
     donkey_car.add(odo, outputs=['car/speed'])
+
+    # drive by pid w/ speed or by throttle in [-1,1]?
+    throttle_var = 'pilot/speed' if use_pid else 'pilot/throttle'
+    # load model if present
+    if model_path is not None:
+        kl = dk.utils.get_model_by_type('linear', cfg)
+        kl.load(model_path)
+        outputs = ['pilot/angle', throttle_var]
+        donkey_car.add(kl, inputs=['cam/image_array'], outputs=outputs)
 
     # create the RC receiver with 3 channels
     rc_steering = RCReceiver(cfg.STEERING_RC_GPIO, invert=True)
@@ -67,31 +75,34 @@ def drive(cfg, use_pid=False, no_cam=False):
                            zero_pulse=cfg.THROTTLE_STOPPED_PWM,
                            min_pulse=cfg.THROTTLE_REVERSE_PWM)
 
+    throttle_input = 'user/throttle' if model_path is None else 'pilot/throttle'
     if use_pid:
-        def scale_speed(controller_input):
-            return controller_input * cfg.MAX_SPEED
+        class Rescaler:
+            def run(self, controller_input):
+                return controller_input * cfg.MAX_SPEED
 
-        rescaler = Lambda(scale_speed)
-        donkey_car.add(rescaler, inputs=['user/throttle'], outputs=['user/speed'])
+        donkey_car.add(Rescaler(), inputs=['user/throttle'], outputs=['user/speed'])
 
-        def pid_error(car_speed, user_speed):
-            return car_speed - user_speed
+        class PidError:
+            def run(self, car_speed, user_speed):
+                return car_speed - user_speed
 
-        pid = Lambda(pid_error)
-        donkey_car.add(pid, inputs=['car/speed', 'user/speed'], outputs=['pid/error'])
+        inputs = ['car/speed', 'user/speed' if model_path is None else 'pilot/speed']
+        donkey_car.add(PidError(), inputs=inputs, outputs=['pid/error'])
 
         # add pid controller to convert throttle value into speed
         pid = PIDController(p=cfg.PID_P, i=cfg.PID_I, d=cfg.PID_D, debug=False)
-        donkey_car.add(pid, inputs=['pid/error'], outputs=['user/throttle'])
+        donkey_car.add(pid, inputs=['pid/error'], outputs=[throttle_input])
 
-    donkey_car.add(throttle, inputs=['user/throttle'])
+    donkey_car.add(throttle, inputs=[throttle_input])
 
-    if not no_cam:
-        def recording_condition(throttle_on, throttle_val):
-            return throttle_on and throttle_val > 0
+    # only record if cam is on and no auto-pilot
+    if not no_cam and model_path is None:
+        class RecordingCondition:
+            def recording_condition(self, throttle_on, throttle_val):
+                return throttle_on and throttle_val > 0
 
-        recording_condition_part = Lambda(recording_condition)
-        donkey_car.add(recording_condition_part,
+        donkey_car.add(RecordingCondition(),
                        inputs=['user/throttle_on', 'user/throttle'],
                        outputs=['user/recording'])
 
