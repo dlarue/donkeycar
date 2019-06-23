@@ -55,6 +55,11 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None):
         outputs = ['pilot/angle', throttle_var]
         donkey_car.add(kl, inputs=['cam/image_array'], outputs=outputs)
 
+        class PrintShape:
+            def run(self, image_array):
+                print(image_array.shape)
+        donkey_car.add(PrintShape(), inputs=['cam/image_array'])
+
     # create the RC receiver with 3 channels
     rc_steering = RCReceiver(cfg.STEERING_RC_GPIO, invert=True)
     rc_throttle = RCReceiver(cfg.THROTTLE_RC_GPIO)
