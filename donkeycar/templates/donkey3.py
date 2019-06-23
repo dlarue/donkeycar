@@ -107,7 +107,7 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None):
     # only record if cam is on and no auto-pilot
     if not no_cam and model_path is None:
         class RecordingCondition:
-            def recording_condition(self, throttle_on, throttle_val):
+            def run(self, throttle_on, throttle_val):
                 return throttle_on and throttle_val > 0
 
         donkey_car.add(RecordingCondition(),
