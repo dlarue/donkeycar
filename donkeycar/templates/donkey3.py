@@ -6,6 +6,7 @@ controller and to do a calibration of the RC throttle and steering triggers.
 Usage:
     manage.py (drive) [--pid] [--no_cam] [--model=<path_to_pilot>]
     manage.py (calibrate)
+    manage.py (test)
 
 Options:
     -h --help        Show this screen.
@@ -19,6 +20,14 @@ from donkeycar.parts.datastore import TubHandler, TubWiper
 from donkeycar.parts.clock import Timestamp
 from donkeycar.parts.transform import Lambda, PIDController
 from donkeycar.parts.sensor import Odometer
+
+
+class TypePrinter:
+    def __init__(self, type_name):
+        self.type_name = type_name
+
+    def run(self, in_type):
+        print("Type of", self.type_name, type(in_type))
 
 
 def drive(cfg, use_pid=False, no_cam=False, model_path=None):
@@ -46,21 +55,17 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None):
     odo = Odometer()
     donkey_car.add(odo, outputs=['car/speed'])
 
-    # drive by pid w/ speed or by throttle in [-1,1]?
+    donkey_car.add(TypePrinter('Image'), inputs=['cam/image_array'])
+
+    # drive by pid w/ speed or by throttle
     throttle_var = 'pilot/speed' if use_pid else 'pilot/throttle'
     # load model if present
     if model_path is not None:
         print("Using auto-pilot")
-        class PrintShape:
-            def run(self, image_array):
-                print("Image shape", image_array.shape)
-        donkey_car.add(PrintShape(), inputs=['cam/image_array'])
-
         kl = dk.utils.get_model_by_type('linear', cfg)
         kl.load(model_path)
         outputs = ['pilot/angle', throttle_var]
         donkey_car.add(kl, inputs=['cam/image_array'], outputs=outputs)
-
 
     # create the RC receiver with 3 channels
     rc_steering = RCReceiver(cfg.STEERING_RC_GPIO, invert=True)
@@ -170,6 +175,16 @@ def calibrate(cfg):
     donkey_car.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
 
 
+def test(cfg):
+    donkey_car = dk.vehicle.Vehicle()
+    clock = Timestamp()
+    donkey_car.add(clock, outputs=['timestamp'])
+    cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
+    donkey_car.add(cam, outputs=['cam/image_array'], threaded=True)
+    donkey_car.add(TypePrinter('Timestamp'), inputs=['timestamp'])
+    donkey_car.add(TypePrinter('Image'), inputs=['cam/image_array'])
+
+
 if __name__ == '__main__':
     args = docopt(__doc__)
     config = dk.load_config()
@@ -178,7 +193,8 @@ if __name__ == '__main__':
               model_path=args['--model'])
     elif args['calibrate']:
         calibrate(config)
-
+    elif args['test']:
+        test(config)
 
 
 
