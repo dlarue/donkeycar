@@ -186,18 +186,18 @@ def calibrate(cfg):
 
 
 def test(cfg, model_path=None):
-    donkey_car = dk.vehicle.Vehicle()
+    car = dk.vehicle.Vehicle()
     clock = Timestamp()
-    donkey_car.add(clock, outputs=['timestamp'])
+    car.add(clock, outputs=['timestamp'])
     cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
-    donkey_car.add(cam, outputs=['cam/image_array'], threaded=True)
+    car.add(cam, outputs=['cam/image_array'], threaded=True)
 
     odo = Odometer()
-    donkey_car.add(odo, outputs=['car/speed'])
+    car.add(odo, outputs=['car/speed'])
 
-    donkey_car.add(TypePrinter('Timestamp'), inputs=['timestamp'])
-    donkey_car.add(TypePrinter('Image'), inputs=['cam/image_array'])
-    donkey_car.add(TypePrinter('Speed'), inputs=['car/speed'])
+    car.add(TypePrinter('Timestamp'), inputs=['timestamp'])
+    car.add(TypePrinter('Image'), inputs=['cam/image_array'])
+    car.add(TypePrinter('Speed'), inputs=['car/speed'])
 
     if model_path is not None:
         print("Using auto-pilot")
@@ -208,16 +208,16 @@ def test(cfg, model_path=None):
             def run(self, image):
                 return image is not None
 
-        dk.add(CheckValidFrame(), inputs=['cam/image'], outputs=['cam/valid'])
+        car.add(CheckValidFrame(), inputs=['cam/image'], outputs=['cam/valid'])
 
         inputs = ['cam/image_array']
         outputs = ['pilot/angle', 'pilot/throttle']
-        donkey_car.add(kl, inputs=inputs, outputs=outputs, run_condition='cam/valid')
+        car.add(kl, inputs=inputs, outputs=outputs, run_condition='cam/valid')
 
-    donkey_car.add(TypePrinter('pilot/angle'), inputs=['pilot/angle'])
-    donkey_car.add(TypePrinter('pilot/throttle'), inputs=['pilot/throttle'])
+    car.add(TypePrinter('pilot/angle'), inputs=['pilot/angle'])
+    car.add(TypePrinter('pilot/throttle'), inputs=['pilot/throttle'])
 
-    donkey_car.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
+    car.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
 
 
 def test2(cfg, model_path=None, use_joystick=False, model_type=None, camera_type='single', meta=[]):
