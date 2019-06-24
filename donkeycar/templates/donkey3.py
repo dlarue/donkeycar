@@ -7,14 +7,13 @@ Usage:
     manage.py (drive) [--pid] [--no_cam] [--model=<path_to_pilot>]
     manage.py (calibrate)
     manage.py (test) [--model=<path_to_pilot>]
-    manage.py (test2) [--model=<model>] [--js] [--type=(linear|categorical|rnn|imu|behavior|3d|localizer|latent)] [--camera=(single|stereo)] [--meta=<key:value> ...]
 
 Options:
     -h --help        Show this screen.
 """
 
 from docopt import docopt
-import time
+
 import donkeycar as dk
 from donkeycar.parts.camera import PiCamera
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle, RCReceiver
@@ -22,14 +21,8 @@ from donkeycar.parts.datastore import TubHandler, TubWiper
 from donkeycar.parts.clock import Timestamp
 from donkeycar.parts.transform import Lambda, PIDController
 from donkeycar.parts.sensor import Odometer
-from donkeycar.parts.controller import LocalWebController
-
-from donkeycar.parts.transform import Lambda, TriggeredCallback, DelayedTrigger
+from donkeycar.parts.transform import Lambda
 from donkeycar.parts.datastore import TubHandler
-from donkeycar.parts.controller import JoystickController
-from donkeycar.parts.throttle_filter import ThrottleFilter
-from donkeycar.parts.file_watcher import FileWatcher
-from donkeycar.parts.launch import AiLaunch
 
 
 class TypePrinter:
@@ -222,12 +215,6 @@ if __name__ == '__main__':
         calibrate(config)
     elif args['test']:
         test(config, model_path=args['--model'])
-    elif args['test2']:
-        model_type = args['--type']
-        camera_type = args['--camera']
-        test2(config, model_path = args['--model'], use_joystick=args['--js'],
-              model_type=model_type, camera_type=camera_type,
-              meta=args['--meta'])
 
 
 
