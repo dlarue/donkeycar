@@ -203,96 +203,13 @@ def test(cfg, model_path=None):
         print("Using auto-pilot")
         kl = dk.utils.get_model_by_type('linear', cfg)
         kl.load(model_path)
-
-        class CheckValidFrame:
-            def run(self, image):
-                return image is not None
-
-        car.add(CheckValidFrame(), inputs=['cam/image'], outputs=['cam/valid'])
-
-        inputs = ['cam/image_array']
         outputs = ['pilot/angle', 'pilot/throttle']
-        car.add(kl, inputs=inputs, outputs=outputs, run_condition='cam/valid')
+        car.add(kl, inputs=['cam/image_array'], outputs=outputs)
 
     car.add(TypePrinter('pilot/angle'), inputs=['pilot/angle'])
     car.add(TypePrinter('pilot/throttle'), inputs=['pilot/throttle'])
 
     car.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
-
-
-def test2(cfg, model_path=None, use_joystick=False, model_type=None, camera_type='single', meta=[]):
-    '''
-    Construct a working robotic vehicle from many parts.
-    Each part runs as a job in the Vehicle loop, calling either
-    it's run or run_threaded method depending on the constructor flag `threaded`.
-    All parts are updated one after another at the framerate given in
-    cfg.DRIVE_LOOP_HZ assuming each part finishes processing in a timely manner.
-    Parts may have named outputs and inputs. The framework handles passing named outputs
-    to parts requesting the same named input.
-    '''
-
-    # Initialize car
-    V = dk.vehicle.Vehicle()
-
-    inputs = []
-    threaded = True
-    print("cfg.CAMERA_TYPE", cfg.CAMERA_TYPE)
-
-    from donkeycar.parts.camera import PiCamera
-    cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
-
-    V.add(cam, inputs=inputs, outputs=['cam/image_array'], threaded=threaded)
-    V.add(TypePrinter('Image'), inputs=['cam/image_array'])
-
-    ctr = LocalWebController()
-
-    V.add(ctr,
-          inputs=['cam/image_array'],
-          outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
-          threaded=True)
-
-    # See if we should even run the pilot module.
-    # This is only needed because the part run_condition only accepts boolean
-    class PilotCondition:
-        def run(self, mode):
-            return True
-
-    V.add(PilotCondition(), inputs=['user/mode'], outputs=['run_pilot'])
-
-    def load_model(kl, model_path):
-        start = time.time()
-        try:
-            print('loading model', model_path)
-            kl.load(model_path)
-            print('finished loading in %s sec.' % (str(time.time() - start)))
-        except Exception as e:
-            print(e)
-            print('ERR>> problems loading model', model_path)
-
-    if model_path:
-        # When we have a model, first create an appropriate Keras part
-        kl = dk.utils.get_model_by_type('linear', cfg)
-        kl.load(model_path)
-
-        def reload_model(filename):
-            load_model(kl, filename)
-
-        model_reload_cb = reload_model
-
-        # these parts will reload the model file, but only when ai is running so we don't interrupt user driving
-        V.add(FileWatcher(model_path), outputs=['modelfile/dirty'], run_condition="ai_running")
-        V.add(DelayedTrigger(100), inputs=['modelfile/dirty'], outputs=['modelfile/reload'], run_condition="ai_running")
-        V.add(TriggeredCallback(model_path, model_reload_cb), inputs=["modelfile/reload"], run_condition="ai_running")
-        inputs = ['cam/image_array']
-        outputs = ['pilot/angle', 'pilot/throttle']
-        V.add(kl, inputs=inputs, outputs=outputs, run_condition='run_pilot')
-
-
-    if type(ctr) is LocalWebController:
-        print("You can now go to <your pi ip address>:8887 to drive your car.")
-
-    # run the vehicle for 20 seconds
-    V.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
 
 
 if __name__ == '__main__':
