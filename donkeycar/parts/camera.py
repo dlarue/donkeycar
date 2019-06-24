@@ -5,10 +5,12 @@ from PIL import Image
 import glob
 from donkeycar.utils import rgb2gray
 
+
 class BaseCamera:
 
     def run_threaded(self):
         return self.frame
+
 
 class PiCamera(BaseCamera):
     def __init__(self, image_w=160, image_h=120, image_d=3, framerate=20):
@@ -17,22 +19,22 @@ class PiCamera(BaseCamera):
         
         resolution = (image_w, image_h)
         # initialize the camera and stream
-        self.camera = PiCamera() #PiCamera gets resolution (height, width)
+        self.camera = PiCamera()  # PiCamera gets resolution (height, width)
         self.camera.resolution = resolution
         self.camera.framerate = framerate
         self.rawCapture = PiRGBArray(self.camera, size=resolution)
         self.stream = self.camera.capture_continuous(self.rawCapture,
-            format="rgb", use_video_port=True)
+                                                     format="rgb",
+                                                     use_video_port=True)
 
-        # initialize the frame and the variable used to indicate
-        # if the thread should be stopped
-        self.frame = None
+        # initialize the frame to right size and zeros (meaning black)
+        self.frame = np.zeros((image_w, image_h, image_d))
+        # variable used to indicate if the thread should be stopped
         self.on = True
         self.image_d = image_d
 
         print('PiCamera loaded...warming camera')
         time.sleep(1)
-
 
     def run(self):
         f = next(self.stream)
