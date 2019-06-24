@@ -28,7 +28,7 @@ class PiCamera(BaseCamera):
                                                      use_video_port=True)
 
         # initialize the frame to right size and zeros (meaning black)
-        self.frame = np.zeros((image_w, image_h, image_d))
+        self.frame = np.zeros((image_h, image_w, image_d))
         # variable used to indicate if the thread should be stopped
         self.on = True
         self.image_d = image_d
