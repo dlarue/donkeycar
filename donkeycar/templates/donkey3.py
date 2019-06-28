@@ -60,6 +60,8 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None):
 
     # drive by pid w/ speed or by throttle
     throttle_var = 'pilot/speed' if use_pid else 'pilot/throttle'
+    steering_input = 'user/angle'
+    throttle_input = 'user/throttle'
     # load model if present
     if model_path is not None:
         print("Using auto-pilot")
@@ -67,6 +69,8 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None):
         kl.load(model_path)
         outputs = ['pilot/angle', throttle_var]
         donkey_car.add(kl, inputs=['cam/image_array'], outputs=outputs)
+        steering_input = 'pilot/angle'
+        throttle_input = 'pilot/throttle'
 
     # create the RC receiver with 3 channels
     rc_steering = RCReceiver(cfg.STEERING_RC_GPIO, invert=True)
@@ -76,20 +80,6 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None):
     donkey_car.add(rc_throttle, outputs=['user/throttle', 'user/throttle_on'])
     donkey_car.add(rc_wiper, outputs=['user/wiper', 'user/wiper_on'])
 
-    # create the PWM steering and throttle controller for servo and esc
-    steering_controller = PCA9685(cfg.STEERING_CHANNEL)
-    steering = PWMSteering(controller=steering_controller,
-                           left_pulse=cfg.STEERING_LEFT_PWM,
-                           right_pulse=cfg.STEERING_RIGHT_PWM)
-    donkey_car.add(steering, inputs=['user/angle'])
-
-    throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL)
-    throttle = PWMThrottle(controller=throttle_controller,
-                           max_pulse=cfg.THROTTLE_FORWARD_PWM,
-                           zero_pulse=cfg.THROTTLE_STOPPED_PWM,
-                           min_pulse=cfg.THROTTLE_REVERSE_PWM)
-
-    throttle_input = 'user/throttle' if model_path is None else 'pilot/throttle'
     if use_pid:
         class Rescaler:
             def run(self, controller_input):
@@ -100,7 +90,7 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None):
         class PidError:
             def run(self, car_speed, user_speed):
                 return car_speed - user_speed
-
+        # use pid either for rc control output or for ai output
         inputs = ['car/speed', 'user/speed' if model_path is None else 'pilot/speed']
         donkey_car.add(PidError(), inputs=inputs, outputs=['pid/error'])
 
@@ -108,7 +98,20 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None):
         pid = PIDController(p=cfg.PID_P, i=cfg.PID_I, d=cfg.PID_D, debug=False)
         donkey_car.add(pid, inputs=['pid/error'], outputs=[throttle_input])
 
+    throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL)
+    throttle = PWMThrottle(controller=throttle_controller,
+                           max_pulse=cfg.THROTTLE_FORWARD_PWM,
+                           zero_pulse=cfg.THROTTLE_STOPPED_PWM,
+                           min_pulse=cfg.THROTTLE_REVERSE_PWM)
     donkey_car.add(throttle, inputs=[throttle_input])
+
+    # create the PWM steering and throttle controller for servo and esc
+    steering_controller = PCA9685(cfg.STEERING_CHANNEL)
+    steering = PWMSteering(controller=steering_controller,
+                           left_pulse=cfg.STEERING_LEFT_PWM,
+                           right_pulse=cfg.STEERING_RIGHT_PWM)
+    # add steering which is either user or the ai
+    donkey_car.add(steering, inputs=[steering_input])
 
     # only record if cam is on and no auto-pilot
     if not no_cam and model_path is None:
