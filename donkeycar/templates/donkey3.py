@@ -58,8 +58,6 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None):
     odo = Odometer()
     donkey_car.add(odo, outputs=['car/speed'])
 
-    donkey_car.add(TypePrinter('Image'), inputs=['cam/image_array'])
-
     # drive by pid w/ speed or by throttle
     throttle_var = 'pilot/speed' if use_pid else 'pilot/throttle'
     # load model if present
