@@ -782,3 +782,46 @@ class ServoBlaster(object):
     def shutdown(self):
         self.run((self.max + self.min) / 2)
         self.servoblaster.close()
+
+
+class ModeSwitch:
+    """
+    Donkey part which allows to cycle through a number of states, every time an
+    input signal is received. This is useful if for example we want to cycle
+    through different behaviours in the drive mode when we only have an RC or
+    similar controller but no web controller. When pressing that button we can
+    cycle through different states, like drive w/ auto pilot or w/o, etc.
+    As run gets called in the vehicle loop the mode switch runs only once for
+    each continuous activation. A new mode switch requires to release of the
+    input trigger.
+    """
+    def __init__(self, num_modes=1):
+        """
+        :param num_modes: number of modes
+        """
+        assert num_modes >= 1, "Need >=1 modes in ModeSwitch part"
+        self._num_modes = num_modes
+        self._current_mode = 0
+        self._active_loop = False
+
+    def run(self, is_active):
+        """
+        Method in the vehicle loop. Cycle to next mode
+        :param is_active: if deletion has been triggered by the caller
+        :return: active mode
+        """
+        # only run if input is true and debounced
+        if is_active:
+            if not self._active_loop:
+                # action command
+                self._current_mode += 1
+                # if we run over the end set back to mode 0
+                if self._current_mode == self._num_modes:
+                    self._current_mode = 0
+                # activate the loop tracker
+                self._active_loop = True
+        else:
+            # trigger released, reset active loop
+            self._active_loop = False
+
+        return self._current_mode
