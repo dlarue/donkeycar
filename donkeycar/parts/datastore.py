@@ -187,9 +187,9 @@ class Tub(object):
             except Exception as e:
                 problems = True
                 if fix is False:
-                    logger.warning('Problem with record {} at {}: {}'.format(ix, self.path, str(e)))
+                    print('Problem with record {} at {}: {}'.format(ix, self.path, str(e)))
                 else:
-                    logger.warning('Problem with record {} at {}, removing because: {}'.format(ix, self.path, str(e)))
+                    print('Problem with record {} at {}, removing because: {}'.format(ix, self.path, str(e)))
                     self.remove_record(ix)
         if not problems:
             print("No problems found.")
@@ -656,7 +656,7 @@ class TubGroup(Tub):
             record_count += len(t.df)
             self.input_types.update(dict(zip(t.inputs, t.types)))
 
-        logger.info('joining the tubs {} records together. This could take {}'
+        print('joining the tubs {} records together. This could take {}'
                     ' minutes.'.format(record_count, int(record_count / 300000)))
 
         self.meta = {'inputs': list(self.input_types.keys()),
