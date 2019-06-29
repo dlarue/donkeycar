@@ -110,7 +110,7 @@ class PIDController:
         self.alpha = curr_alpha
 
         if self.debug:
-            print('PID error={0:3.2f} output={2:3.2f}'.format(err, curr_alpha))
+            print('PID error={0:3.2f} output={1:3.2f}'.format(err, curr_alpha))
 
         return curr_alpha
 
