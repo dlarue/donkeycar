@@ -67,7 +67,7 @@ class CreateCar(BaseCommand):
 
     def create_car(self, path, template='complete', overwrite=False):
         """
-        This script sets up the folder struction for donkey to work.
+        This script sets up the folder structure for donkey to work.
         It must run without donkey installed so that people installing with
         docker can build the folder structure for docker to mount to.
         """
@@ -133,19 +133,6 @@ class CreateCar(BaseCommand):
         print("Donkey setup complete.")
 
 
-
-class UploadData(BaseCommand):
-
-    def parse_args(self, args):
-        parser = argparse.ArgumentParser(prog='uploaddata', usage='%(prog)s [options]')
-        parser.add_argument('--url', help='path where to create car folder')
-        parser.add_argument('--template', help='name of car template to use')
-
-        parsed_args = parser.parse_args(args)
-        return parsed_args
-
-
-
 class FindCar(BaseCommand):
     def parse_args(self, args):
         pass
@@ -204,7 +191,7 @@ class MakeMovie(BaseCommand):
         parser.add_argument('--out', default='tub_movie.mp4', help='The movie filename to create. default: tub_movie.mp4')
         parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
         parser.add_argument('--model', default='None', help='the model to use to show control outputs')
-        parser.add_argument('--type', default='categorical', help='the model type to load')
+        parser.add_argument('--type', help='the model type to load')
         parser.add_argument('--salient', action="store_true", help='should we overlay salient map showing avtivations')
         parser.add_argument('--start', type=int, default=1, help='first frame to process')
         parser.add_argument('--end', type=int, default=-1, help='last frame to process')
@@ -222,14 +209,25 @@ class MakeMovie(BaseCommand):
         args, parser = self.parse_args(args)
 
         if args.tub is None:
+            print("ERR>> --tub argument missing.")
+            parser.print_help()
+            return
+
+        if args.type is None:
+            print("ERR>> --type argument missing.")
             parser.print_help()
             return
 
         if args.salient:
+            if args.model is None or "None" in args.model:
+                print("ERR>> salient visualization requires a model. Pass with the --model arg.")
+                parser.print_help()
+                return
+
             #imported like this, we make TF conditional on use of --salient
             #and we keep the context maintained throughout our callbacks to
             #compute the salient mask
-            from keras import backend as K
+            from tensorflow.python.keras import backend as K
             import tensorflow as tf
             os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
@@ -320,7 +318,21 @@ class MakeMovie(BaseCommand):
 
         user_angle = float(record["user/angle"])
         user_throttle = float(record["user/throttle"])
-        pilot_angle, pilot_throttle = self.keras_part.run(img)
+        expected = self.keras_part.model.inputs[0].shape[1:]
+        actual = img.shape
+        pred_img = img
+
+        #check input depth
+        if expected[2] == 1 and actual[2] == 3:
+            pred_img = rgb2gray(pred_img)
+            pred_img = pred_img.reshape(pred_img.shape + (1,))
+            actual = pred_img.shape
+
+        if(expected != actual):
+            print("expected input dim", expected, "didn't match actual dim", actual)
+            return
+
+        pilot_angle, pilot_throttle = self.keras_part.run(pred_img)
 
         a1 = user_angle * 45.0
         l1 = user_throttle * 3.0 * 80.0
@@ -367,13 +379,14 @@ class MakeMovie(BaseCommand):
 
     def init_salient(self, model):
         #from https://github.com/ermolenkodev/keras-salient-object-visualisation
-        from keras.layers import Input, Dense, merge
-        from keras.models import Model
-        from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
-        from keras.layers import Activation, Dropout, Flatten, Dense
+        from tensorflow.python.keras.layers import Input, Dense, merge
+        from tensorflow.python.keras.models import Model
+        from tensorflow.python.keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
+        from tensorflow.python.keras.layers import Activation, Dropout, Flatten, Dense
 
+        input_shape = model.inputs[0].shape
 
-        img_in = Input(shape=(120, 160, 3), name='img_in')
+        img_in = Input(shape=(input_shape[1], input_shape[2], input_shape[3]), name='img_in')
         x = img_in
         x = Convolution2D(24, (5,5), strides=(2,2), activation='relu', name='conv1')(x)
         x = Convolution2D(32, (5,5), strides=(2,2), activation='relu', name='conv2')(x)
@@ -382,10 +395,20 @@ class MakeMovie(BaseCommand):
         conv_5 = Convolution2D(64, (3,3), strides=(1,1), activation='relu', name='conv5')(x)
         self.convolution_part = Model(inputs=[img_in], outputs=[conv_5])
 
-        for layer_num in ('1', '2', '3', '4', '5'):
-            self.convolution_part.get_layer('conv' + layer_num).set_weights(model.get_layer('conv2d_' + layer_num).get_weights())
+        #print("input model summary:")
+        #print(model.summary())
+        #print("conv model summary:")
+        #print(self.convolution_part.summary())
 
-        from keras import backend as K
+        for layer_num in ('1', '2', '3', '4', '5'):
+            try:
+                self.convolution_part.get_layer('conv' + layer_num).set_weights(model.get_layer('conv2d_' + layer_num).get_weights())
+            except Exception as e:
+                print(e)
+                print("Failed to load layer weights for layer", layer_num)
+                raise Exception("Failed to load weights")
+
+        from tensorflow.python.keras import backend as K
         import tensorflow as tf
         os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
@@ -419,7 +442,17 @@ class MakeMovie(BaseCommand):
         alpha = 0.004
         beta = 1.0 - alpha
 
-        salient_mask = self.compute_visualisation_mask(img)
+        expected = self.keras_part.model.inputs[0].shape[1:]
+        actual = img.shape
+        pred_img = img
+
+        #check input depth
+        if expected[2] == 1 and actual[2] == 3:
+            pred_img = rgb2gray(pred_img)
+            pred_img = pred_img.reshape(pred_img.shape + (1,))
+            actual = pred_img.shape
+
+        salient_mask = self.compute_visualisation_mask(pred_img)
         salient_mask_stacked = np.dstack((salient_mask,salient_mask))
         salient_mask_stacked = np.dstack((salient_mask_stacked,salient_mask))
         blend = cv2.addWeighted(img.astype('float32'), alpha, salient_mask_stacked, beta, 0.0)
@@ -678,7 +711,7 @@ class ShowCnnActivations(BaseCommand):
 
         returns activations/features
         '''
-        from keras.models import load_model, Model
+        from tensorflow.python.keras.models import load_model, Model
 
         model_path = os.path.expanduser(model_path)
         image_path = os.path.expanduser(image_path)
@@ -799,7 +832,7 @@ class ShowPredictionPlots(BaseCommand):
         parser.add_argument('--tub', nargs='+', help='paths to tubs')
         parser.add_argument('--model', default=None, help='name of record to create histogram')
         parser.add_argument('--limit', default=1000, help='how many records to process')
-        parser.add_argument('--type', default='categorical', help='how many records to process')
+        parser.add_argument('--type', default='categorical', help='model type')
         parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
         parsed_args = parser.parse_args(args)
         return parsed_args
@@ -813,7 +846,7 @@ class ShowPredictionPlots(BaseCommand):
 
 def execute_from_command_line():
     """
-    This is the fuction linked to the "donkey" terminal command.
+    This is the function linked to the "donkey" terminal command.
     """
     commands = {
             'createcar': CreateCar,
