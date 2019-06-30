@@ -64,6 +64,14 @@ $(document).ready(function(){
             if (angle > 0) {
                 $('#angle-bar-forward').css('width', steeringPercent).html(steeringRounded)
             }
+            var throttle = data["user/throttle"];
+            var throttlePercent = Math.round(Math.abs(throttle) * 100) + '%';
+            var throttleRounded = throttle.toFixed(2)
+
+            $('.throttle-bar .progress-bar').css('width', '0%').html('');
+            $('#throttle-bar-forward').css('width', throttlePercent).html(throttleRounded)
+            $('#throttle-bar-forward').css('width', throttlePercent).html(throttleRounded)
+
         });
     };
 
