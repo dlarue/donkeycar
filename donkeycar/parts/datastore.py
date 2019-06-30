@@ -423,7 +423,7 @@ class Tub(object):
 
     def get_train_val_gen(self, X_keys, Y_keys, batch_size=128,
                           record_transform=None, train_frac=.8):
-        train_df = train=self.df.sample(frac=train_frac,random_state=200)
+        train_df = self.df.sample(frac=train_frac,random_state=200)
         val_df = self.df.drop(train_df.index)
 
         train_gen = self.get_train_gen(X_keys=X_keys, Y_keys=Y_keys,
