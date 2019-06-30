@@ -561,6 +561,7 @@ if __name__ == '__main__':
         dirs = preprocessFileList(args['--file'])
         if tub is not None:
             tub_paths = [os.path.expanduser(n.strip()) for n in tub.split(',')]
+            print("Using tubs:\n", tub_paths)
             dirs.extend(tub_paths)
 
         multi_train(cfg, dirs, model, transfer, model_type, continuous, aug)

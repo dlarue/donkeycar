@@ -122,6 +122,9 @@ def collate_records(records, gen_records, opts):
     use the opts dict to specify config choices
     '''
 
+    throttle_key = 'car/speed' if opts['cfg'].USE_SPEED_FOR_MODEL \
+        else 'user/throttle'
+    print('Using', throttle_key, 'for training')
     for record_path in records:
 
         basepath = os.path.dirname(record_path)        
@@ -147,8 +150,6 @@ def collate_records(records, gen_records, opts):
         sample["json_data"] = json_data        
 
         angle = float(json_data['user/angle'])
-        throttle_key = 'car/speed' if opts['cfg'].USE_SPEED_FOR_MODEL \
-                       else 'user/throttle'
         throttle = float(json_data[throttle_key])
 
         if opts['categorical']:
@@ -681,7 +682,7 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type,
     trains models which take sequence of images
     '''
     assert(not continuous)
-    print("sequence of images training")    
+    print("Sequence of images training")
 
     kl = dk.utils.get_model_by_type(model_type=model_type, cfg=cfg)
     tubs = gather_tubs(cfg, tub_names)
@@ -694,8 +695,11 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type,
         record_paths.sort(key=get_record_index)
         records += record_paths
 
-    print('collating records')
     gen_records = {}
+    throttle_key = 'car/speed' if cfg.USE_SPEED_FOR_MODEL \
+        else 'user/throttle'
+    print('Collating records, using', throttle_key, 'for training')
+
 
     for record_path in records:
 
@@ -712,8 +716,6 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type,
         sample["index"] = get_image_index(image_filename)
 
         angle = float(json_data['user/angle'])
-        throttle_key = 'car/speed' if cfg.USE_SPEED_FOR_MODEL \
-                       else 'user/throttle'
         throttle = float(json_data[throttle_key])
 
         sample['target_output'] = np.array([angle, throttle])
@@ -724,7 +726,7 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type,
         key = make_key(sample)
         gen_records[key] = sample
 
-    print('collating sequences')
+    print('Collating sequences')
     sequences = []
     target_len = cfg.SEQUENCE_LENGTH
     look_ahead = False
@@ -747,7 +749,7 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type,
 
         sequences.append(seq)
 
-    print("collated", len(sequences), "sequences of length", target_len)
+    print("Collated", len(sequences), "sequences of length", target_len)
     # shuffle and split the data
     train_data, val_data = train_test_split(sequences, shuffle=True,
                                             test_size=(1.0 - cfg.TRAIN_TEST_SPLIT))
