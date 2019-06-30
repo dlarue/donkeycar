@@ -544,8 +544,9 @@ if __name__ == '__main__':
     if args['drive']:
         model_type = args['--type']
         camera_type = args['--camera']
-        drive(cfg, model_path = args['--model'], use_joystick=args['--js'], model_type=model_type, camera_type=camera_type,
-            meta=args['--meta'])
+        drive(cfg, model_path = args['--model'], use_joystick=args['--js'],
+              model_type=model_type, camera_type=camera_type,
+              meta=args['--meta'])
     
     if args['train']:
         from train import multi_train, preprocessFileList
@@ -557,10 +558,10 @@ if __name__ == '__main__':
         continuous = args['--continuous']
         aug = args['--aug']     
 
-        dirs = preprocessFileList( args['--file'] )
+        dirs = preprocessFileList(args['--file'])
         if tub is not None:
-            tub_paths = [os.path.expanduser(n) for n in tub.split(',')]
-            dirs.extend( tub_paths )
+            tub_paths = [os.path.expanduser(n.strip()) for n in tub.split(',')]
+            dirs.extend(tub_paths)
 
         multi_train(cfg, dirs, model, transfer, model_type, continuous, aug)
 
