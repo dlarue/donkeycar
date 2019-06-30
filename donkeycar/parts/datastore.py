@@ -206,13 +206,12 @@ class Tub(object):
         """
         Removes records from the end. Assume these are continuously labeled.
         :param num_records: number or records to be removed from end
-        :return:
         """
         removed_records = 0
-        last_ix = self.current_ix - 1
+        last_ix = self.current_ix
         while removed_records < num_records:
             self.remove_record(last_ix - removed_records)
-            removed_records = removed_records + 1
+            removed_records += 1
 
     def put_record(self, data):
         """
@@ -236,7 +235,7 @@ class Tub(object):
             elif typ is 'image':
                 path = self.make_file_path(key)
                 val.save(path)
-                json_data[key]=path
+                json_data[key] = path
 
             elif typ == 'image_array':
                 img = Image.fromarray(np.uint8(val))
