@@ -82,7 +82,7 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None):
         outputs = ['pilot/angle', 'pilot/speed' if use_pid else 'pilot/throttle']
         donkey_car.add(kl, inputs=['cam/image_array'], outputs=outputs)
         mode_switch = ModeSwitch(num_modes=2)
-        donkey_car.add(mode_switch, inputs=['user/wiper'], outputs=['user/mode'])
+        donkey_car.add(mode_switch, inputs=['user/wiper_on'], outputs=['user/mode'])
 
         # This part dispatches between user or ai depending on the switch state
         class PilotCondition:
