@@ -18,7 +18,8 @@ class PCA9685:
         # Initialise the PCA9685 using the default address (0x40).
         if busnum is not None:
             from Adafruit_GPIO import I2C
-            #replace the get_bus function with our own
+            # replace the get_bus function with our own
+
             def get_bus():
                 return busnum
             I2C.get_default_bus = get_bus
@@ -73,11 +74,12 @@ class JHat:
     def __init__(self, channel, address=0x40, frequency=60, busnum=None):
         print("Firing up the Hat")
         import Adafruit_PCA9685
-        LED0_OFF_L         = 0x08
+        LED0_OFF_L = 0x08
         # Initialise the PCA9685 using the default address (0x40).
         if busnum is not None:
             from Adafruit_GPIO import I2C
-            #replace the get_bus function with our own
+            # replace the get_bus function with our own
+
             def get_bus():
                 return busnum
             I2C.get_default_bus = get_bus
@@ -86,19 +88,19 @@ class JHat:
         self.channel = channel
         self.register = LED0_OFF_L+4*channel
 
-        #we install our own write that is more efficient use of interrupts
+        # we install our own write that is more efficient use of interrupts
         self.pwm.set_pwm = self.set_pwm
 
     def set_pulse(self, pulse):
         self.set_pwm(self.channel, 0, pulse)
 
     def set_pwm(self, channel, on, off):
-        #print("pulse", off)
-        """Sets a single PWM channel."""
+        # sets a single PWM channel
         self.pwm._device.writeList(self.register, [off & 0xFF, off >> 8])
 
     def run(self, pulse):
         self.set_pulse(pulse)
+
 
 class JHatReader:
     '''
@@ -108,11 +110,11 @@ class JHatReader:
         import Adafruit_PCA9685
         self.pwm = Adafruit_PCA9685.PCA9685(address=address)
         self.pwm.set_pwm_freq(frequency)
-        self.register = 0 #i2c read doesn't take an address
+        self.register = 0  # i2c read doesn't take an address
         self.steering = 0
         self.throttle = 0
         self.running = True
-        #send a reset
+        # send a reset
         self.pwm._device.writeRaw8(0x06)
 
     def read_pwm(self):
@@ -121,14 +123,14 @@ class JHatReader:
         pwm control values from last RC input
         '''
         h1 = self.pwm._device.readU8(self.register)
-        #first byte of header must be 100, otherwize we might be reading
-        #in the wrong byte offset
+        # first byte of header must be 100, otherwize we might be reading
+        # in the wrong byte offset
         while h1 != 100:
             print("skipping to start of header")
             h1 = self.pwm._device.readU8(self.register)
 
+        # h2 ignored now
         h2 = self.pwm._device.readU8(self.register)
-        #h2 ignored now
 
         val_a = self.pwm._device.readU8(self.register)
         val_b = self.pwm._device.readU8(self.register)
@@ -138,11 +140,9 @@ class JHatReader:
         val_d = self.pwm._device.readU8(self.register)
         self.throttle = (val_d << 8) + val_c
 
-        #scale the values from -1 to 1
-        self.steering = (((float)(self.steering)) - 1500.0) / 500.0  + 0.158
-        self.throttle = (((float)(self.throttle)) - 1500.0) / 500.0  + 0.136
-
-        #print(self.steering, self.throttle)
+        # scale the values from -1 to 1
+        self.steering = (((float)(self.steering)) - 1500.0) / 500.0 + 0.158
+        self.throttle = (((float)(self.throttle)) - 1500.0) / 500.0 + 0.136
 
     def update(self):
         while(self.running):
@@ -173,9 +173,8 @@ class PWMSteering:
         self.right_pulse = right_pulse
         print('PWM Steering created')
 
-
     def run(self, angle):
-        #map absolute angle to angle that vehicle can implement.
+        # map absolute angle to angle that vehicle can implement.
         pulse = dk.utils.map_range(angle,
                                 self.LEFT_ANGLE, self.RIGHT_ANGLE,
                                 self.left_pulse, self.right_pulse)
@@ -183,8 +182,8 @@ class PWMSteering:
         self.controller.set_pulse(pulse)
 
     def shutdown(self):
-        self.run(0) #set steering straight
-
+        # set steering straight
+        self.run(0)
 
 
 class PWMThrottle:
@@ -205,7 +204,7 @@ class PWMThrottle:
         self.min_pulse = min_pulse
         self.zero_pulse = zero_pulse
 
-        #send zero pulse to calibrate ESC
+        # send zero pulse to calibrate ESC
         print("Init ESC")
         self.controller.set_pulse(self.max_pulse)
         time.sleep(0.01)
@@ -214,7 +213,6 @@ class PWMThrottle:
         self.controller.set_pulse(self.zero_pulse)
         time.sleep(1)
         print('PWM Throttle created')
-
 
     def run(self, throttle):
         if throttle > 0:
@@ -229,7 +227,8 @@ class PWMThrottle:
         self.controller.set_pulse(pulse)
 
     def shutdown(self):
-        self.run(0) #stop vehicle
+        # stop vehicle
+        self.run(0)
 
 
 
@@ -253,7 +252,6 @@ class Adafruit_DCMotor_Hat:
         self.speed = 0
         self.throttle = 0
 
-
     def run(self, speed):
         '''
         Update the speed of the motor where 1 is full forward and
@@ -272,7 +270,6 @@ class Adafruit_DCMotor_Hat:
 
         self.motor.setSpeed(self.throttle)
 
-
     def shutdown(self):
         self.mh.getMotor(self.motor_num).run(Adafruit_MotorHAT.RELEASE)
 
@@ -288,10 +285,10 @@ class Maestro:
     maestro_lock = threading.Lock()
     astar_lock = threading.Lock()
 
-    def __init__(self, channel, frequency = 60):
+    def __init__(self, channel, frequency=60):
         import serial
 
-        if Maestro.maestro_device == None:
+        if Maestro.maestro_device is None:
             Maestro.maestro_device = serial.Serial('/dev/ttyACM0', 115200)
 
         self.channel = channel
@@ -353,10 +350,11 @@ class Maestro:
             if Maestro.astar_device.inWaiting() > 8:
                 ret = Maestro.astar_device.readline()
 
-        if ret != None:
+        if ret is not None:
             ret = ret.rstrip()
 
         return ret
+
 
 class Teensy:
     '''
@@ -372,8 +370,8 @@ class Teensy:
     def __init__(self, channel, frequency = 60):
         import serial
 
-        if Teensy.teensy_device == None:
-            Teensy.teensy_device = serial.Serial('/dev/teensy', 115200, timeout = 0.01)
+        if Teensy.teensy_device is None:
+            Teensy.teensy_device = serial.Serial('/dev/teensy', 115200, timeout=0.01)
 
         self.channel = channel
         self.frequency = frequency
@@ -383,7 +381,7 @@ class Teensy:
         self.brakelights = False
 
         if Teensy.astar_device == None:
-            Teensy.astar_device = serial.Serial('/dev/astar', 115200, timeout = 0.01)
+            Teensy.astar_device = serial.Serial('/dev/astar', 115200, timeout=0.01)
 
     def set_pulse(self, pulse):
         # Recalculate pulse width from the Adafruit values
@@ -429,7 +427,7 @@ class Teensy:
             if Teensy.teensy_device.inWaiting() > 8:
                 ret = Teensy.teensy_device.readline()
 
-        if ret != None:
+        if ret is not None:
             ret = ret.rstrip()
 
         return ret
@@ -442,10 +440,11 @@ class Teensy:
             if Teensy.astar_device.inWaiting() > 8:
                 ret = Teensy.astar_device.readline()
 
-        if ret != None:
+        if ret is not None:
             ret = ret.rstrip()
 
         return ret
+
 
 class MockController(object):
     def __init__(self):
@@ -502,7 +501,6 @@ class L298N_HBridge_DC_Motor(object):
             GPIO.output(self.pin_forward, GPIO.LOW)
             GPIO.output(self.pin_backward, GPIO.LOW)
 
-
     def shutdown(self):
         import RPi.GPIO as GPIO
         self.pwm.stop()
@@ -522,18 +520,21 @@ class TwoWheelSteeringThrottle(object):
         right_motor_speed = throttle
 
         if steering < 0:
-            left_motor_speed *= (1.0 - (-steering))
+            left_motor_speed *= (1.0 + steering)
         elif steering > 0:
             right_motor_speed *= (1.0 - steering)
 
         return left_motor_speed, right_motor_speed
+
 
 class RCReceiver:
     """
     Class to read PWM from an RC control and convert into a float output number.
     Uses pigpio library. The code is essentially a copy of
     http://abyz.me.uk/rpi/pigpio/code/read_PWM_py.zip. You will need a voltage
-    divider from a 5V RC receiver to a 3.3V Pi input pin.
+    divider from a 5V RC receiver to a 3.3V Pi input pin if the receiver runs
+    on 5V. If your receiver accepts 3.3V input, then it can be connected
+    directly to the Pi.
     """
     MIN_OUT = -1
     MAX_OUT = 1
