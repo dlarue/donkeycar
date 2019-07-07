@@ -4,7 +4,6 @@ Classes for sensory information.
 
 """
 
-import pigpio
 
 class Odometer:
     """
@@ -18,6 +17,7 @@ class Odometer:
         :param weight: weighting of current measurement in average speed
                         calculation
         """
+        import pigpio
         self._gpio = gpio
         self._tick_per_meter = tick_per_meter
         self._pi = pigpio.pi()

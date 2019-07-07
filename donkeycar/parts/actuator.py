@@ -6,7 +6,6 @@ are wrapped in a mixer class before being used in the drive loop.
 
 import time
 import donkeycar as dk
-import pigpio
 
         
 class PCA9685:

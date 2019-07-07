@@ -6,7 +6,7 @@ controller and to do a calibration of the RC throttle and steering triggers.
 Usage:
     manage.py (drive) [--pid] [--no_cam] [--model=<path_to_pilot>]
     manage.py (calibrate)
-    manage.py (test) [--model=<path_to_pilot>]
+    manage.py (test)
 
 Options:
     -h --help        Show this screen.
@@ -16,7 +16,7 @@ from docopt import docopt
 
 import donkeycar as dk
 from donkeycar.parts.camera import PiCamera
-from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle, RCReceiver
+from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle, RCReceiver, ModeSwitch
 from donkeycar.parts.datastore import TubHandler, TubWiper
 from donkeycar.parts.clock import Timestamp
 from donkeycar.parts.transform import Lambda, PIDController
@@ -58,20 +58,6 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None):
     odo = Odometer()
     donkey_car.add(odo, outputs=['car/speed'])
 
-    # drive by pid w/ speed or by throttle
-    throttle_var = 'pilot/speed' if use_pid else 'pilot/throttle'
-    steering_input = 'user/angle'
-    throttle_input = 'user/throttle'
-    # load model if present
-    if model_path is not None:
-        print("Using auto-pilot")
-        kl = dk.utils.get_model_by_type('linear', cfg)
-        kl.load(model_path)
-        outputs = ['pilot/angle', throttle_var]
-        donkey_car.add(kl, inputs=['cam/image_array'], outputs=outputs)
-        steering_input = 'pilot/angle'
-        throttle_input = 'pilot/throttle'
-
     # create the RC receiver with 3 channels
     rc_steering = RCReceiver(cfg.STEERING_RC_GPIO, invert=True)
     rc_throttle = RCReceiver(cfg.THROTTLE_RC_GPIO)
@@ -80,6 +66,7 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None):
     donkey_car.add(rc_throttle, outputs=['user/throttle', 'user/throttle_on'])
     donkey_car.add(rc_wiper, outputs=['user/wiper', 'user/wiper_on'])
 
+    # if pid we want to convert throttle to speed
     if use_pid:
         class Rescaler:
             def run(self, controller_input):
@@ -87,31 +74,64 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None):
 
         donkey_car.add(Rescaler(), inputs=['user/throttle'], outputs=['user/speed'])
 
+    # load model if present
+    if model_path is not None:
+        print("Using auto-pilot")
+        kl = dk.utils.get_model_by_type('linear', cfg)
+        kl.load(model_path)
+        outputs = ['pilot/angle', 'pilot/speed' if use_pid else 'pilot/throttle']
+        donkey_car.add(kl, inputs=['cam/image_array'], outputs=outputs)
+        mode_switch = ModeSwitch(num_modes=2)
+        donkey_car.add(mode_switch, inputs=['user/wiper'], outputs=['user/mode'])
+
+        # This part dispatches between user or ai depending on the switch state
+        class PilotCondition:
+            def run(self, user_mode, user_var, pilot_var):
+                if user_mode == 0:
+                    return user_var
+                else:
+                    return pilot_var
+
+        if use_pid:
+            donkey_car.add(PilotCondition(),
+                           inputs=['user/mode', 'user/speed', 'pilot/speed'],
+                           outputs=['speed'])
+        else:
+            donkey_car.add(PilotCondition(),
+                           inputs=['user/mode', 'user/throttle', 'pilot/throttle'],
+                           outputs=['throttle'])
+
+    # drive by pid w/ speed
+    if use_pid:
+
         class PidError:
             def run(self, car_speed, user_speed):
                 return car_speed - user_speed
         # use pid either for rc control output or for ai output
-        inputs = ['car/speed', 'user/speed' if model_path is None else 'pilot/speed']
+        inputs = ['car/speed', 'speed' if model_path is not None else 'user/speed']
         donkey_car.add(PidError(), inputs=inputs, outputs=['pid/error'])
 
         # add pid controller to convert throttle value into speed
         pid = PIDController(p=cfg.PID_P, i=cfg.PID_I, d=cfg.PID_D, debug=False)
-        donkey_car.add(pid, inputs=['pid/error'], outputs=[throttle_input])
+        donkey_car.add(pid, inputs=['pid/error'], outputs=['throttle'])
 
+    # create the PWM throttle controller for esc
     throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL)
     throttle = PWMThrottle(controller=throttle_controller,
                            max_pulse=cfg.THROTTLE_FORWARD_PWM,
                            zero_pulse=cfg.THROTTLE_STOPPED_PWM,
                            min_pulse=cfg.THROTTLE_REVERSE_PWM)
-    donkey_car.add(throttle, inputs=[throttle_input])
-
-    # create the PWM steering and throttle controller for servo and esc
+    # feed signal which is either rc (user) or ai
+    input_field = 'user/throttle' if model_path is None else 'throttle'
+    donkey_car.add(throttle, inputs=[input_field])
+    # create the PWM steering controller
     steering_controller = PCA9685(cfg.STEERING_CHANNEL)
     steering = PWMSteering(controller=steering_controller,
                            left_pulse=cfg.STEERING_LEFT_PWM,
                            right_pulse=cfg.STEERING_RIGHT_PWM)
-    # add steering which is either user or the ai
-    donkey_car.add(steering, inputs=[steering_input])
+    # feed signal which is either rc (user) or ai
+    input_field = 'user/angle' if model_path is None else 'pilot/angle'
+    donkey_car.add(steering, inputs=[input_field])
 
     # only record if cam is on and no auto-pilot
     if not no_cam and model_path is None:
@@ -179,31 +199,45 @@ def calibrate(cfg):
     donkey_car.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
 
 
-def test(cfg, model_path=None):
+def test(cfg):
     car = dk.vehicle.Vehicle()
     clock = Timestamp()
     car.add(clock, outputs=['timestamp'])
-    cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
-    car.add(cam, outputs=['cam/image_array'], threaded=True)
 
-    odo = Odometer()
-    car.add(odo, outputs=['car/speed'])
+    class KeyGen:
+        def __init__(self):
+            self.count = 0
+            self.key = 'a'
 
-    car.add(TypePrinter('Timestamp'), inputs=['timestamp'])
-    car.add(TypePrinter('Image'), inputs=['cam/image_array'])
-    car.add(TypePrinter('Speed'), inputs=['car/speed'])
+        def run(self):
+            if self.count == 5:
+                self.count = 0
+                self.key = 'b' if self.key == 'a' else 'a'
+                print('Hit 5, key =', self.key)
+            self.count += 1
+            return self.key
 
-    if model_path is not None:
-        print("Using auto-pilot")
-        kl = dk.utils.get_model_by_type('linear', cfg)
-        kl.load(model_path)
-        outputs = ['pilot/angle', 'pilot/throttle']
-        car.add(kl, inputs=['cam/image_array'], outputs=outputs)
+    car.add(KeyGen(), outputs=['key'])
 
-    car.add(TypePrinter('pilot/angle'), inputs=['pilot/angle'])
-    car.add(TypePrinter('pilot/throttle'), inputs=['pilot/throttle'])
+    class Dispatcher:
+        def run(self, switch):
+            if switch == 'a':
+                return 1
+            elif switch == 'b':
+                return 2
+            else:
+                return 0
 
-    car.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
+    car.add(Dispatcher(), inputs=['key'], outputs=['x'])
+
+    class Print:
+        def run(self, var):
+            print('variable', var)
+
+    car.add(Print(), inputs=['key'])
+    car.add(Print(), inputs=['x'])
+
+    car.start(rate_hz=5, max_loop_count=cfg.MAX_LOOPS)
 
 
 if __name__ == '__main__':
@@ -215,7 +249,7 @@ if __name__ == '__main__':
     elif args['calibrate']:
         calibrate(config)
     elif args['test']:
-        test(config, model_path=args['--model'])
+        test(config)
 
 
 
