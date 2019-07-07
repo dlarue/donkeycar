@@ -39,6 +39,7 @@ class Odometer:
         :param level: rising/falling edge
         :param tick: # of mu s since boot, 32 bit int
         """
+        import pigpio
         if self._last_tick is not None:
             diff = pigpio.tickDiff(self._last_tick, tick)
             self._avg = self._weight * diff + (1.0 - self._weight) * self._avg
@@ -60,5 +61,6 @@ class Odometer:
         """
         Donkey parts interface
         """
+        import pigpio
         self._cb.cancel()
 
