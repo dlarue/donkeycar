@@ -572,6 +572,7 @@ class RCReceiver:
         :param tick: current tick in mu s
         :return: difference in ticks
         """
+        import pigpio
         if self._high_tick is not None:
             t = pigpio.tickDiff(self._high_tick, tick)
             return t
@@ -618,6 +619,7 @@ class RCReceiver:
         """
         Donkey parts interface
         """
+        import pigpio
         self._cb.cancel()
 
 
