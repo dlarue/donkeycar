@@ -87,6 +87,8 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None):
         # This part dispatches between user or ai depending on the switch state
         class PilotCondition:
             def run(self, user_mode, user_var, pilot_var):
+                print("User mode", user_mode, "user/throttle", user_var,
+                      "pilot/throttle", pilot_var)
                 if user_mode == 0:
                     return user_var
                 else:
