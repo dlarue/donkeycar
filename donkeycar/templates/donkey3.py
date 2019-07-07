@@ -87,21 +87,15 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None):
         # This part dispatches between user or ai depending on the switch state
         class PilotCondition:
             def run(self, user_mode, user_var, pilot_var):
-                print("User mode", user_mode, "user/throttle", user_var,
-                      "pilot/throttle", pilot_var)
                 if user_mode == 0:
                     return user_var
                 else:
                     return pilot_var
-
-        if use_pid:
-            donkey_car.add(PilotCondition(),
-                           inputs=['user/mode', 'user/speed', 'pilot/speed'],
-                           outputs=['speed'])
-        else:
-            donkey_car.add(PilotCondition(),
-                           inputs=['user/mode', 'user/throttle', 'pilot/throttle'],
-                           outputs=['throttle'])
+        # switch between user or pilot speed (if pid) or throttle (if no pid)
+        var = 'speed' if use_pid else 'throttle'
+        donkey_car.add(PilotCondition(),
+                       inputs=['user/mode', 'user/' + var, 'pilot/' + var],
+                       outputs=[var])
 
     # drive by pid w/ speed
     if use_pid:
@@ -185,18 +179,16 @@ def calibrate(cfg):
     donkey_car.add(rc_throttle, outputs=['user/throttle', 'user/throttle_on'])
     donkey_car.add(rc_wiper, outputs=['user/wiper', 'user/wiper_on'])
 
-    # create the lambda function for plotting into the shell
-    def plotter(angle, steering_on, throttle, throttle_on, wiper, wiper_on):
-        print('angle=%+5.4f, steering_on=%1d, throttle=%+5.4f, throttle_on=%1d '
-              'wiper=%+5.4f, wiper_on=%1d' %
-              (angle, steering_on, throttle, throttle_on, wiper, wiper_on))
-
-    plotter_part = Lambda(plotter)
+    # create plotter part for printing into the shell
+    class Plotter:
+        def run(self, angle, steering_on, throttle, throttle_on, wiper, wiper_on):
+            print('angle=%+5.4f, steering_on=%1d, throttle=%+5.4f, '
+                  'throttle_on=%1d wiper=%+5.4f, wiper_on=%1d' %
+                  (angle, steering_on, throttle, throttle_on, wiper, wiper_on))
     # add plotter part
-    donkey_car.add(plotter_part, inputs=['user/angle', 'user/steering_on',
-                                         'user/throttle', 'user/throttle_on',
-                                         'user/wiper', 'user/wiper_on'])
-
+    donkey_car.add(Plotter(), inputs=['user/angle', 'user/steering_on',
+                                      'user/throttle', 'user/throttle_on',
+                                      'user/wiper', 'user/wiper_on'])
     # run the vehicle
     donkey_car.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
 
