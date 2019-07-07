@@ -122,7 +122,7 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None):
                            zero_pulse=cfg.THROTTLE_STOPPED_PWM,
                            min_pulse=cfg.THROTTLE_REVERSE_PWM)
     # feed signal which is either rc (user) or ai
-    input_field = 'user/throttle' if model_path is None else 'throttle'
+    input_field = 'user/throttle' if not use_pid and model_path is None else 'throttle'
     donkey_car.add(throttle, inputs=[input_field])
     # create the PWM steering controller
     steering_controller = PCA9685(cfg.STEERING_CHANNEL)
