@@ -10,7 +10,7 @@ class Odometer:
     Odometric part to measure the speed usually through hall sensors sensing
     magnets attached to the drive system.
     """
-    def __init__(self, gpio=6, tick_per_meter=76, weight=0.5):
+    def __init__(self, gpio=6, tick_per_meter=76, weight=0.5, debug=False):
         """
         :param gpio: gpio of sensor being connected
         :param tick_per_meter: how many signals per meter
@@ -25,6 +25,7 @@ class Odometer:
         self._last_tick_speed = None
         self._weight = weight
         self._avg = 0
+        self._debug = debug
 
         # pigpio callback mechanics
         self._pi.set_pull_up_down(self._gpio, pigpio.PUD_UP)
@@ -55,6 +56,8 @@ class Odometer:
         if self._last_tick_speed != self._last_tick and self._avg != 0.0:
             speed = 1.0e6 / (self._avg * self._tick_per_meter)
         self._last_tick_speed = self._last_tick
+        if self._debug:
+            print("Speed =", speed)
         return speed
 
     def shutdown(self):
