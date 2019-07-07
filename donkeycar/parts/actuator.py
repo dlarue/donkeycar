@@ -548,6 +548,7 @@ class RCReceiver:
                             being the center values when the controls are not
                             pressed.
         """
+        import pigpio
         self.pi = pigpio.pi()
         self.gpio = gpio
         self._high_tick = None
