@@ -216,15 +216,13 @@ class PWMThrottle:
 
     def run(self, throttle):
         if throttle > 0:
-            pulse = dk.utils.map_range(throttle,
-                                    0, self.MAX_THROTTLE,
-                                    self.zero_pulse, self.max_pulse)
+            pulse = dk.utils.map_range(throttle, 0, self.MAX_THROTTLE,
+                                       self.zero_pulse, self.max_pulse)
         else:
-            pulse = dk.utils.map_range(throttle,
-                                    self.MIN_THROTTLE, 0,
-                                    self.min_pulse, self.zero_pulse)
-
+            pulse = dk.utils.map_range(throttle, self.MIN_THROTTLE, 0,
+                                       self.min_pulse, self.zero_pulse)
         self.controller.set_pulse(pulse)
+        print('Throttle pulse', pulse)
 
     def shutdown(self):
         # stop vehicle
