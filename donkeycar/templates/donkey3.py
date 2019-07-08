@@ -19,9 +19,8 @@ from donkeycar.parts.camera import PiCamera
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle, RCReceiver, ModeSwitch
 from donkeycar.parts.datastore import TubHandler, TubWiper
 from donkeycar.parts.clock import Timestamp
-from donkeycar.parts.transform import Lambda, PIDController
+from donkeycar.parts.transform import PIDController
 from donkeycar.parts.sensor import Odometer
-from donkeycar.parts.transform import Lambda
 from donkeycar.parts.datastore import TubHandler
 
 
