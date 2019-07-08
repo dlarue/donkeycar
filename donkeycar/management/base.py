@@ -161,18 +161,16 @@ class CalibrateCar(BaseCommand):
 
     def run(self, args):
         from donkeycar.parts.actuator import PCA9685
-        from donkeycar.parts.sombrero import Sombrero
-
-        s = Sombrero()
 
         args = self.parse_args(args)
         channel = int(args.channel)
-        busnum = None
+        bus_num = None
         if args.bus:
-            busnum = int(args.bus)
+            bus_num = int(args.bus)
         address = int(args.address, 16)
-        print('init PCA9685 on channel %d address %s bus %s' %(channel, str(hex(address)), str(busnum)))
-        c = PCA9685(channel, address=address, busnum=busnum)
+        print('init PCA9685 on channel %d address %s bus %s' % 
+              (channel, str(hex(address)), str(bus_num)))
+        c = PCA9685(channel, address=address, busnum=bus_num)
 
         while True:
             try:
