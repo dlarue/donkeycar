@@ -72,10 +72,9 @@ class CreateCar(BaseCommand):
         docker can build the folder structure for docker to mount to.
         """
 
-        #these are neeeded incase None is passed as path
+        # these are needed in case None is passed as path
         path = path or '~/mycar'
         template = template or 'complete'
-
 
         print("Creating car folder: {}".format(path))
         path = make_dir(path)
@@ -86,9 +85,9 @@ class CreateCar(BaseCommand):
         for fp in folder_paths:
             make_dir(fp)
 
-        #add car application and config files if they don't exist
+        # add car application and config files if they don't exist
         app_template_path = os.path.join(TEMPLATES_PATH, template+'.py')
-        config_template_path = os.path.join(TEMPLATES_PATH, 'cfg_' + template + '.py')
+        config_template_path = os.path.join(TEMPLATES_PATH, 'cfg_complete.py')
         myconfig_template_path = os.path.join(TEMPLATES_PATH, 'myconfig.py')
         train_template_path = os.path.join(TEMPLATES_PATH, 'train.py')
         car_app_path = os.path.join(path, 'manage.py')
@@ -117,7 +116,7 @@ class CreateCar(BaseCommand):
         if not os.path.exists(mycar_config_path):
             print("Copying my car config overrides")
             shutil.copyfile(myconfig_template_path, mycar_config_path)
-            #now copy file contents from config to myconfig, with all lines commented out.
+            # now copy file contents from config to myconfig, with all lines commented out.
             cfg = open(car_config_path, "rt")
             mcfg = open(mycar_config_path, "at")
             copy = False
@@ -129,14 +128,12 @@ class CreateCar(BaseCommand):
             cfg.close()
             mcfg.close()
 
-
         print("Donkey setup complete.")
 
 
 class FindCar(BaseCommand):
     def parse_args(self, args):
         pass
-
 
     def run(self, args):
         print('Looking up your computer IP address...')
@@ -150,7 +147,6 @@ class FindCar(BaseCommand):
         cmd = "sudo nmap -sP " + ip + "/24 | awk '/^Nmap/{ip=$NF}/B8:27:EB/{print ip}'"
         print("Your car's ip address is:" )
         os.system(cmd)
-
 
 
 class CalibrateCar(BaseCommand):
@@ -190,6 +186,7 @@ class CalibrateCar(BaseCommand):
                 break
             except Exception as ex:
                 print("Oops, {}".format(ex))
+
 
 class MakeMovie(BaseCommand):
 
@@ -232,9 +229,9 @@ class MakeMovie(BaseCommand):
                 parser.print_help()
                 return
 
-            #imported like this, we make TF conditional on use of --salient
-            #and we keep the context maintained throughout our callbacks to
-            #compute the salient mask
+            # imported like this, we make TF conditional on use of --salient
+            # and we keep the context maintained throughout our callbacks to
+            # compute the salient mask
             from tensorflow.python.keras import backend as K
             import tensorflow as tf
             os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -510,7 +507,6 @@ class MakeMovie(BaseCommand):
         return image # returns a 8-bit RGB array
 
 
-
 class Sim(BaseCommand):
     '''
     Start a websocket SocketIO server to talk to a donkey simulator
@@ -540,7 +536,7 @@ class Sim(BaseCommand):
         if cfg is None:
             return
 
-        #TODO: this logic should be in a pilot or model handler part.
+        # TODO: this logic should be in a pilot or model handler part.
         if args.type == "categorical":
             kl = KerasCategorical()
         elif args.type == "linear":
@@ -550,22 +546,21 @@ class Sim(BaseCommand):
             parser.print_help()
             return
 
-        #can provide an optional image filter part
+        # can provide an optional image filter part
         img_stack = None
 
-        #load keras model
+        # load keras model
         kl.load(args.model)
 
-        #start socket server framework
+        # start socket server framework
         sio = socketio.Server()
 
         top_speed = float(args.top_speed)
 
-        #start sim server handler
+        # start sim server handler
         ss = SteeringServer(sio, kpart=kl, top_speed=top_speed, image_part=img_stack)
 
-        #register events and pass to server handlers
-
+        # register events and pass to server handlers
         @sio.on('telemetry')
         def telemetry(sid, data):
             ss.telemetry(sid, data)
@@ -577,8 +572,8 @@ class Sim(BaseCommand):
         ss.go(('0.0.0.0', 9090))
 
 
-
 class TubCheck(BaseCommand):
+
     def parse_args(self, args):
         parser = argparse.ArgumentParser(prog='tubcheck', usage='%(prog)s [options]')
         parser.add_argument('tubs', nargs='+', help='paths to tubs')
@@ -682,6 +677,7 @@ class ConSync(BaseCommand):
 
             os.system(command)
             time.sleep(5)
+
 
 class ConTrain(BaseCommand):
     '''
