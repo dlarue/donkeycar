@@ -29,6 +29,7 @@ class PartProfiler:
         if delta < thresh or delta > 100000.0:
             delta = thresh
         self.records[p]['times'][-1] = delta
+        print('Profile', p.__class__.__name__, 'now', now, 'prev', prev, 'delta', delta)
 
     def report(self):
         print("Part Profile Summary: (times in ms)")
@@ -46,7 +47,7 @@ class PartProfiler:
 
 
 class Vehicle():
-    def __init__(self, mem=None):
+    def __init__(self, mem=None, debug=False):
 
         if not mem:
             mem = Memory()
