@@ -151,7 +151,7 @@ class Vehicle:
                     # print a message when could not maintain loop rate.
                     if verbose:
                         print('WARN::Vehicle: jitter violation in vehicle loop '
-                              'with value:', abs(sleep_time))
+                              'with {0:4.0f}ms'.format(abs(sleep_time)))
 
                 if verbose and loop_count % 200 == 0:
                     self.profiler.report()
