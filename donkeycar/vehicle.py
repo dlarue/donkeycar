@@ -37,6 +37,10 @@ class PartProfiler:
         pt.field_names =["part", "max", "min", "avg"]
         for p, val in self.records.items():
             arr = val['times']
+            print('------------')
+            print(p.__class__.__name__)
+            print('------------')
+            print(arr)
             if len(arr) == 0:
                 continue
             pt.add_row( [p.__class__.__name__ ,
