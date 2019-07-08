@@ -47,7 +47,7 @@ class PartProfiler:
 
 
 class Vehicle():
-    def __init__(self, mem=None, debug=False):
+    def __init__(self, mem=None):
 
         if not mem:
             mem = Memory()
