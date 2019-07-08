@@ -7,9 +7,9 @@ Created on Wed Sep 13 21:27:44 2017
 """
 import os
 import types
-    
+
 class Config:
-    
+
     def from_pyfile(self, filename, silent=False):
         #filename = os.path.join(self.root_path, filename)
         d = types.ModuleType('config')
@@ -22,13 +22,13 @@ class Config:
             raise
         self.from_object(d)
         return True
-    
+
     def from_object(self, obj):
         for key in dir(obj):
             if key.isupper():
                 #self[key] = getattr(obj, key)
                 setattr(self, key, getattr(obj, key))
-                
+
     def __str__(self):
         result = []
         for key in dir(self):
@@ -36,10 +36,15 @@ class Config:
                 result.append((key, getattr(self,key)))
         return str(result)
 
+    def show(self):
+        for attr in dir(self):
+            if attr.isupper():
+                print(attr, ":", getattr(self, attr))
+
 
 
 def load_config(config_path=None):
-    
+
     if config_path is None:
         import __main__ as main
         main_path = os.path.dirname(os.path.realpath(main.__file__))
@@ -48,7 +53,7 @@ def load_config(config_path=None):
             local_config = os.path.join(os.path.curdir, 'config.py')
             if os.path.exists(local_config):
                 config_path = local_config
-    
+
     print('loading config file: {}'.format(config_path))
     cfg = Config()
     cfg.from_pyfile(config_path)
@@ -59,6 +64,8 @@ def load_config(config_path=None):
         print("loading personal config over-rides...", end=' ')
         personal_cfg = Config()
         personal_cfg.from_pyfile(personal_cfg_path)
+        #personal_cfg.show()
+
         cfg.from_object(personal_cfg)
     print('config loaded')
     return cfg

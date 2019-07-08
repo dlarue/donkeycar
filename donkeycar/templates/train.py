@@ -3,11 +3,10 @@
 Scripts to train a keras model using tensorflow. Uses the data written by the
 donkey v2.2 tub writer,but faster training with proper sampling of distribution
 over tubs.
-Has settings for continuous training that will look for new files as it trains. 
+Has settings for continuous training that will look for new files as it trains.
 Modify on_best_model if you wish continuous training to update your pi as it
 builds. You can drop this in your ~/mycar dir.
 Basic usage should feel familiar: python train.py --model models/mypilot
-You might need to do a: pip install scikit-learn
 
 
 Usage:
@@ -34,8 +33,8 @@ import numpy as np
 
 from tensorflow.python import keras
 from docopt import docopt
-from sklearn.model_selection import train_test_split
-from sklearn.utils import shuffle
+import numpy as np
+from PIL import Image
 
 import donkeycar as dk
 from donkeycar.parts.keras import KerasIMU, KerasCategorical, \
@@ -45,7 +44,7 @@ from donkeycar.utils import *
 
 
 '''
-matplotlib can be a pain to setup on a Mac. So handle the case where it is 
+matplotlib can be a pain to setup on a Mac. So handle the case where it is
 absent. When present, use it to generate a plot of training results.
 '''
 try:
@@ -54,47 +53,6 @@ try:
 except ImportError:
     do_plot = False
     print("matplotlib not installed")
-    
-deterministic = False
-
-if deterministic:
-    import tensorflow as tf
-    import random as rn
-
-    # The below is necessary in Python 3.2.3 onwards to
-    # have reproducible behavior for certain hash-based operations.
-    # See these references for further details:
-    # https://docs.python.org/3.4/using/cmdline.html#envvar-PYTHONHASHSEED
-    # https://github.com/fchollet/keras/issues/2280#issuecomment-306959926
-
-    os.environ['PYTHONHASHSEED'] = '0'
-
-    # The below is necessary for starting Numpy generated random numbers
-    # in a well-defined initial state.
-
-    np.random.seed(42)
-
-    # The below is necessary for starting core Python generated random numbers
-    # in a well-defined state.
-
-    rn.seed(12345)
-
-    # Force TensorFlow to use single thread. Multiple threads are a potential
-    # source of non-reproducible results. For further details, see:
-    # https://stackoverflow.com/questions/42022950/which-seeds-have-to-be-set-where-to-realize-100-reproducibility-of-training-res
-
-    session_conf = tf.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=1)
-
-    from keras import backend as K
-
-    # The below tf.set_random_seed() will make random number generation in the
-    # TensorFlow backend have a well-defined initial state. For further details,
-    # see: https://www.tensorflow.org/api_docs/python/tf/set_random_seed
-
-    tf.set_random_seed(1234)
-
-    sess = tf.Session(graph=tf.get_default_graph(), config=session_conf)
-    K.set_session(sess)
 
 
 '''
@@ -125,12 +83,14 @@ def collate_records(records, gen_records, opts):
     throttle_key = 'car/speed' if opts['cfg'].USE_SPEED_FOR_MODEL \
         else 'user/throttle'
     print('Using', throttle_key, 'for training')
+    new_records = {}
+
     for record_path in records:
 
-        basepath = os.path.dirname(record_path)        
+        basepath = os.path.dirname(record_path)
         index = get_record_index(record_path)
         sample = {'tub_path': basepath, "index": index}
-             
+
         key = make_key(sample)
 
         if key in gen_records:
@@ -147,7 +107,7 @@ def collate_records(records, gen_records, opts):
 
         sample['record_path'] = record_path
         sample["image_path"] = image_path
-        sample["json_data"] = json_data        
+        sample["json_data"] = json_data
 
         angle = float(json_data['user/angle'])
         throttle = float(json_data[throttle_key])
@@ -181,10 +141,28 @@ def collate_records(records, gen_records, opts):
             pass
 
         sample['img_data'] = None
-        # now assign test or val
-        sample['train'] = (random.uniform(0., 1.0) > 0.2)
-        gen_records[key] = sample
 
+        # Initialise 'train' to False
+        sample['train'] = False
+
+        # We need to maintain the correct train - validate ratio across the dataset, even if continous training
+        # so don't add this sample to the main records list (gen_records) yet.
+        new_records[key] = sample
+
+    # new_records now contains all our NEW samples
+    # - set a random selection to be the training samples based on the ratio in CFG file
+    shufKeys = list(new_records.keys())
+    random.shuffle(shufKeys)
+    trainCount = 0
+    #  Ratio of samples to use as training data, the remaining are used for evaluation
+    targetTrainCount = int(opts['cfg'].TRAIN_TEST_SPLIT * len(shufKeys))
+    for key in shufKeys:
+        new_records[key]['train'] = True
+        trainCount += 1
+        if trainCount >= targetTrainCount:
+            break
+    # Finally add all the new records to the existing list
+    gen_records.update(new_records)
 
 def save_json_and_weights(model, filename):
     '''
@@ -239,11 +217,11 @@ class MyCPCallback(keras.callbacks.ModelCheckpoint):
         '''
         when reset best is set, we want to make sure to run an entire epoch
         before setting our new best on the new total records
-        '''        
+        '''
         if self.reset_best_end_of_epoch:
             self.reset_best_end_of_epoch = False
             self.best = np.Inf
-        
+
 
 def on_best_model(cfg, model, model_filename):
 
@@ -263,11 +241,11 @@ def on_best_model(cfg, model, model_filename):
     # On mac or linux we have scp:
     if not on_windows:
         print('sending model to the pi')
-        
+
         command = 'scp %s %s@%s:~/%s/models/;' % (weights_fnm, cfg.PI_USERNAME, cfg.PI_HOSTNAME, cfg.PI_DONKEY_ROOT)
         command += 'scp %s %s@%s:~/%s/models/;' % (json_fnm, cfg.PI_USERNAME, cfg.PI_HOSTNAME, cfg.PI_DONKEY_ROOT)
         command += 'scp %s %s@%s:~/%s/models/;' % (model_filename, cfg.PI_USERNAME, cfg.PI_HOSTNAME, cfg.PI_DONKEY_ROOT)
-    
+
         print("sending", command)
         res = os.system(command)
         print(res)
@@ -308,7 +286,7 @@ def on_best_model(cfg, model, model_filename):
             ssh.load_host_keys(os.path.expanduser(os.path.join("~", ".ssh", "known_hosts")))
             ssh.connect(server, username=username, password=password)
             sftp = ssh.open_sftp()
-        
+
             for localpath, remotepath in files:
                 sftp.put(localpath, remotepath)
 
@@ -317,19 +295,21 @@ def on_best_model(cfg, model, model_filename):
             print("send succeded")
         except:
             print("send failed")
-    
+
 
 def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, aug):
     '''
     use the specified data in tub_names to train an artifical neural network
     saves the output trained model as model_name
-    ''' 
+    '''
     verbose = cfg.VERBOSE_TRAIN
 
-    
+    if model_name and not '.h5' == model_name[-3:]:
+        raise Exception("Model filename should end with .h5")
+
     if continuous:
         print("continuous training")
-    
+
     gen_records = {}
     opts = {'cfg': cfg}
     kl = get_model_by_type(model_type, cfg=cfg)
@@ -342,10 +322,10 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
 
         # when transferring models, should we freeze all but the last N layers?
         if cfg.FREEZE_LAYERS:
-            num_to_freeze = len(kl.model.layers) - cfg.NUM_LAST_LAYERS_TO_TRAIN 
-            print('freezing %d layers' % num_to_freeze)           
+            num_to_freeze = len(kl.model.layers) - cfg.NUM_LAST_LAYERS_TO_TRAIN
+            print('freezing %d layers' % num_to_freeze)
             for i in range(num_to_freeze):
-                kl.model.layers[i].trainable = False        
+                kl.model.layers[i].trainable = False
 
     if cfg.OPTIMIZER:
         kl.set_optimizer(cfg.OPTIMIZER, cfg.LEARNING_RATE, cfg.LEARNING_RATE_DECAY)
@@ -354,7 +334,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
 
     if cfg.PRINT_MODEL_SUMMARY:
         print(kl.model.summary())
-    
+
     opts['keras_pilot'] = kl
     opts['continuous'] = continuous
 
@@ -366,7 +346,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
 
     def generator(save_best, opts, data, batch_size, is_train_set=True,
                   min_records_to_train=1000):
-        
+
         num_records = len(data)
 
         while True:
@@ -382,7 +362,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
                     new_num_rec = len(data)
                     if new_num_rec > num_records:
                         print('picked up', new_num_rec - num_records, 'new records!')
-                        num_records = new_num_rec 
+                        num_records = new_num_rec
                         save_best.reset_best()
                 if num_records < min_records_to_train:
                     print("not enough records to train. need %d, have %d. waiting..."
@@ -392,7 +372,8 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
 
             batch_data = []
             keys = list(data.keys())
-            keys = shuffle(keys)
+
+            random.shuffle(keys)
 
             kl = opts['keras_pilot']
             if type(kl.model.output) is list:
@@ -403,7 +384,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
             has_imu = type(kl) is KerasIMU
             has_bvh = type(kl) is KerasBehavioral
             img_out = type(kl) is KerasLatent
-            
+
             if img_out:
                 import cv2
 
@@ -448,8 +429,8 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
                                 record['img_data'] = img_arr
                         else:
                             img_arr = record['img_data']
-                            
-                        if img_out:                            
+
+                        if img_out:
                             rz_img_arr = cv2.resize(img_arr, (127, 127)) / 255.0
                             out_img.append(rz_img_arr[:,:,0].reshape((127, 127, 1)))
                         if has_imu:
@@ -484,9 +465,9 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
                     yield X, y
 
                     batch_data = []
-    
+
     model_path = os.path.expanduser(model_name)
-    
+
     # checkpoint to save model after each epoch and send best to the pi.
     save_best = MyCPCallback(send_model_cb=on_best_model, filepath=model_path,
                              monitor='val_loss', verbose=verbose,
@@ -494,7 +475,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
 
     train_gen = generator(save_best, opts, gen_records, cfg.BATCH_SIZE, True)
     val_gen = generator(save_best, opts, gen_records, cfg.BATCH_SIZE, False)
-    
+
     total_records = len(gen_records)
     num_train = 0
     num_val = 0
@@ -529,7 +510,7 @@ def go_train(kl, cfg, train_gen, val_gen, gen_records, model_name,
                                  mode='min', cfg=cfg)
 
     # stop training if the validation error stops improving.
-    early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', 
+    early_stop = keras.callbacks.EarlyStopping(monitor='val_loss',
                                                min_delta=cfg.MIN_DELTA,
                                                patience=cfg.EARLY_STOP_PATIENCE,
                                                verbose=verbose, mode='auto')
@@ -546,19 +527,19 @@ def go_train(kl, cfg, train_gen, val_gen, gen_records, model_name,
         callbacks_list.append(early_stop)
 
     history = kl.model.fit_generator(
-                    train_gen, 
-                    steps_per_epoch=steps_per_epoch, 
-                    epochs=epochs, 
+                    train_gen,
+                    steps_per_epoch=steps_per_epoch,
+                    epochs=epochs,
                     verbose=cfg.VERBOSE_TRAIN,
                     validation_data=val_gen,
-                    callbacks=callbacks_list, 
+                    callbacks=callbacks_list,
                     validation_steps=val_steps,
                     workers=workers_count,
                     use_multiprocessing=use_multiprocessing)
-                    
+
     full_model_val_loss = min(history.history['val_loss'])
     max_val_loss = full_model_val_loss + cfg.PRUNE_VAL_LOSS_DEGRADATION_LIMIT
-    
+
     print("\n\n----------- Best Eval Loss :%f ---------" % save_best.best)
 
     if cfg.SHOW_PLOT:
@@ -577,7 +558,7 @@ def go_train(kl, cfg, train_gen, val_gen, gen_records, model_name,
                 plt.ylabel('loss')
                 plt.xlabel('epoch')
                 plt.legend(['train', 'validate'], loc='upper right')
-                
+
                 # summarize history for acc
                 if 'angle_out_acc' in history.history:
                     plt.subplot(122)
@@ -616,7 +597,7 @@ def go_train(kl, cfg, train_gen, val_gen, gen_records, model_name,
             kl.model.summary()
 
             # stop training if the validation error stops improving.
-            early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', 
+            early_stop = keras.callbacks.EarlyStopping(monitor='val_loss',
                                                        min_delta=cfg.MIN_DELTA,
                                                        patience=cfg.EARLY_STOP_PATIENCE,
                                                        verbose=verbose,
@@ -624,8 +605,8 @@ def go_train(kl, cfg, train_gen, val_gen, gen_records, model_name,
 
             history = kl.model.fit_generator(
                         train_gen,
-                        steps_per_epoch=steps_per_epoch, 
-                        epochs=epochs, 
+                        steps_per_epoch=steps_per_epoch,
+                        epochs=epochs,
                         verbose=cfg.VEBOSE_TRAIN,
                         validation_data=val_gen,
                         validation_steps=val_steps,
@@ -636,7 +617,7 @@ def go_train(kl, cfg, train_gen, val_gen, gen_records, model_name,
             prune_loss = min(history.history['val_loss'])
             print('prune val_loss this iteration: {}'.format(prune_loss))
 
-            # If loss breaks the threshhold 
+            # If loss breaks the threshhold
             if prune_loss < max_val_loss:
                 model.save('{}_prune_{}_filters.h5'
                            .format(base_model_path, cnn_channels))
@@ -730,7 +711,7 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type,
     sequences = []
     target_len = cfg.SEQUENCE_LENGTH
     look_ahead = False
-    
+
     if model_type == "look_ahead":
         target_len = cfg.SEQUENCE_LENGTH * 2
         look_ahead = True
@@ -750,16 +731,18 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type,
         sequences.append(seq)
 
     print("Collated", len(sequences), "sequences of length", target_len)
-    # shuffle and split the data
-    train_data, val_data = train_test_split(sequences, shuffle=True,
-                                            test_size=(1.0 - cfg.TRAIN_TEST_SPLIT))
+
+    #shuffle and split the data
+    train_data, val_data  = train_test_split(sequences,
+                                             test_size=(1 - cfg.TRAIN_TEST_SPLIT))
+
 
     def generator(data, opt, batch_size=cfg.BATCH_SIZE):
         num_records = len(data)
 
         while True:
-            # shuffle again for good measure
-            data = shuffle(data)
+            #shuffle again for good measure
+            random.shuffle(data)
 
             for offset in range(0, num_records, batch_size):
                 batch_data = data[offset:offset+batch_size]
@@ -794,8 +777,8 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type,
                                 if cfg.CACHE_IMAGES:
                                     record['img_data'] = img_arr
                             else:
-                                img_arr = record['img_data']                  
-                                
+                                img_arr = record['img_data']
+
                             inputs_img.append(img_arr)
 
                         if iRec >= i_target_out:
@@ -804,7 +787,7 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type,
                         else:
                             vec_in.append(0.0)  # record['angle'])
                             vec_in.append(0.0)  # record['throttle'])
-                        
+
                     label_vec = seq[i_target_out]['target_output']
 
                     if look_ahead:
@@ -841,7 +824,7 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type,
 
     if steps_per_epoch < 2:
         raise Exception("Too little data to train. Please record more records.")
-    
+
     go_train(kl, cfg, train_gen, val_gen, gen_records, model_name,
              steps_per_epoch, val_steps, continuous, verbose)
 
@@ -889,13 +872,13 @@ def extract_data_from_pickles(cfg, tubs):
             with open(file_path, 'rb') as f:
                 p = zlib.decompress(f.read())
             data = pickle.loads(p)
-           
+
             base_path = dirname(file_path)
             filename = splitext(basename(file_path))[0]
             image_path = join(base_path, filename + '.jpg')
             img = Image.fromarray(np.uint8(data['val']['cam/image_array']))
             img.save(image_path)
-            
+
             data['val']['cam/image_array'] = filename + '.jpg'
 
             with open(join(base_path, 'record_{}.json'.format(filename)), 'w') as f:
@@ -952,7 +935,7 @@ def get_model_apoz(model, generator):
     apoz_df = apoz_df.set_index('layer')
     return apoz_df
 
-    
+
 def remove_comments(dir_list):
     for i in reversed(range(len(dir_list))):
         if dir_list[i].startswith("#"):
@@ -981,7 +964,7 @@ if __name__ == "__main__":
     model_type = args['--type']
     continuous = args['--continuous']
     aug = args['--aug']
-    
+
     dirs = preprocessFileList( args['--file'] )
     if tub is not None:
         tub_paths = [os.path.expanduser(n) for n in tub.split(',')]
