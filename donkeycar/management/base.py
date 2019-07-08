@@ -187,6 +187,8 @@ class CalibrateCar(BaseCommand):
 
 
 class MakeMovie(BaseCommand):
+    def __init__(self):
+        self.deg_to_rad = math.pi / 180.0
 
     def parse_args(self, args):
         parser = argparse.ArgumentParser(prog='makemovie')
@@ -242,7 +244,7 @@ class MakeMovie(BaseCommand):
             return
 
         try:
-            cfg = dk.load_config(conf)
+            self.cfg = dk.load_config(conf)
         except:
             print("Exception while loading config from", conf)
             return
@@ -267,7 +269,7 @@ class MakeMovie(BaseCommand):
         self.keras_part = None
         self.convolution_part = None
         if not args.model == "None":
-            self.keras_part = get_model_by_type(args.type, cfg=cfg)
+            self.keras_part = get_model_by_type(args.type, cfg=self.cfg)
             self.keras_part.load(args.model)
             self.keras_part.compile()
             if args.salient:
@@ -304,8 +306,9 @@ class MakeMovie(BaseCommand):
                 self.compute_visualisation_mask = compute_visualisation_mask
 
         print('making movie', args.out, 'from', self.num_rec, 'images')
-        clip = mpy.VideoClip(self.make_frame, duration=(self.num_rec//cfg.DRIVE_LOOP_HZ) - 1)
-        clip.write_videofile(args.out,fps=cfg.DRIVE_LOOP_HZ)
+        clip = mpy.VideoClip(self.make_frame,
+                             duration=(self.num_rec//self.cfg.DRIVE_LOOP_HZ) - 1)
+        clip.write_videofile(args.out, fps=self.cfg.DRIVE_LOOP_HZ)
 
         print('done')
 
@@ -319,34 +322,44 @@ class MakeMovie(BaseCommand):
 
         import cv2
 
+        use_speed = False
+        if self.cfg.USE_SPEED_FOR_MODEL is not None:
+            use_speed = self.cfg.USE_SPEED_FOR_MODEL
+
+        user_throttle_var = 'car/speed' if use_speed else 'user/throttle'
         user_angle = float(record["user/angle"])
-        user_throttle = float(record["user/throttle"])
+        user_throttle = float(record[user_throttle_var])
         expected = self.keras_part.model.inputs[0].shape[1:]
         actual = img.shape
         pred_img = img
 
-        #check input depth
+        # check input depth
         if expected[2] == 1 and actual[2] == 3:
             pred_img = rgb2gray(pred_img)
             pred_img = pred_img.reshape(pred_img.shape + (1,))
             actual = pred_img.shape
 
-        if(expected != actual):
+        if expected != actual:
             print("expected input dim", expected, "didn't match actual dim", actual)
             return
 
         pilot_angle, pilot_throttle = self.keras_part.run(pred_img)
 
         a1 = user_angle * 45.0
-        l1 = user_throttle * 3.0 * 80.0
+        l1 = user_throttle * 3.0 * (20.0 if use_speed else 80.0)
         a2 = pilot_angle * 45.0
-        l2 = pilot_throttle * 3.0 * 80.0
+        l2 = pilot_throttle * 3.0 * (20.0 if use_speed else 80.0)
 
-        p1 = tuple((74, 119))
-        p2 = tuple((84, 119))
-        p11 = tuple(( int(p1[0] + l1 * math.cos((a1 + 270.0) * math.pi / 180.0)), int(p1[1] + l1 * math.sin((a1 + 270.0) * math.pi / 180.0))))
-        p22 = tuple(( int(p2[0] + l2 * math.cos((a2 + 270.0) * math.pi / 180.0)), int(p2[1] + l2 * math.sin((a2 + 270.0) * math.pi / 180.0))))
+        mid = self.cfg.IMAGE_W // 2 - 1
 
+        p1 = tuple((mid - 2, 119))
+        p2 = tuple((mid + 2, 119))
+        p11 = tuple((int(p1[0] + l1 * math.cos((a1 + 270.0) * self.deg_to_rad)),
+                     int(p1[1] + l1 * math.sin((a1 + 270.0) * self.deg_to_rad))))
+        p22 = tuple((int(p2[0] + l2 * math.cos((a2 + 270.0) * self.deg_to_rad)),
+                     int(p2[1] + l2 * math.sin((a2 + 270.0) * self.deg_to_rad))))
+
+        # user is green, pilot is blue
         cv2.line(img, p1, p11, (0, 255, 0), 2)
         cv2.line(img, p2, p22, (0, 0, 255), 2)
 
