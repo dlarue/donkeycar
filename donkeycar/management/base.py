@@ -205,7 +205,7 @@ class MakeMovie(BaseCommand):
         parser.add_argument('--salient', action="store_true",
                             help='should we overlay salient map '
                                  'showing avtivations')
-        parser.add_argument('--start', type=int, default=1,
+        parser.add_argument('--start', type=int, default=0,
                             help='first frame to process')
         parser.add_argument('--end', type=int, default=-1,
                             help='last frame to process')
@@ -262,17 +262,15 @@ class MakeMovie(BaseCommand):
             return
 
         self.tub = Tub(args.tub)
-        self.num_rec = self.tub.get_num_records()
+        self.index = self.tub.get_index(shuffled=False)
+        self.num_rec = len(self.index)
 
-        if args.start == 1:
-            self.start = self.tub.get_index(shuffled=False)[0]
-        else:
-            self.start = args.start
+        self.start = args.start
 
         if args.end != -1:
             self.end = args.end
         else:
-            self.end = self.num_rec - self.start
+            self.end = self.num_rec
 
         self.num_rec = self.end - self.start
 
@@ -321,8 +319,6 @@ class MakeMovie(BaseCommand):
         clip = mpy.VideoClip(self.make_frame,
                              duration=(self.num_rec//self.cfg.DRIVE_LOOP_HZ) - 1)
         clip.write_videofile(args.out, fps=self.cfg.DRIVE_LOOP_HZ)
-
-        print('done')
 
     def draw_model_prediction(self, record, img):
         '''
@@ -465,10 +461,8 @@ class MakeMovie(BaseCommand):
 
         self.layers_strides = {5: [1, 1, 1, 1], 4: [1, 2, 2, 1], 3: [1, 2, 2, 1], 2: [1, 2, 2, 1], 1: [1, 2, 2, 1]}
 
-
-
     def draw_salient(self, img):
-        #from https://github.com/ermolenkodev/keras-salient-object-visualisation
+        # from https://github.com/ermolenkodev/keras-salient-object-visualisation
         import cv2
         alpha = 0.004
         beta = 1.0 - alpha
@@ -489,7 +483,6 @@ class MakeMovie(BaseCommand):
         blend = cv2.addWeighted(img.astype('float32'), alpha, salient_mask_stacked, beta, 0.0)
         return blend
 
-
     def make_frame(self, t):
         '''
         Callback to return an image from from our tub records.
@@ -505,10 +498,11 @@ class MakeMovie(BaseCommand):
 
         while rec is None and self.iRec < self.end:
             try:
-                rec = self.tub.get_record(self.iRec)
+                rec_ix = self.index[self.iRec]
+                rec = self.tub.get_record(rec_ix)
             except Exception as e:
                 print(e)
-                print("Failed to get image for frame", self.iRec)
+                print("Failed to get image for frame", rec_ix)
                 self.iRec = self.iRec + 1
                 rec = None
 
@@ -529,8 +523,8 @@ class MakeMovie(BaseCommand):
             image = cv2.resize(image, dsize=dsize, interpolation=cv2.INTER_CUBIC)
 
         self.iRec = self.iRec + 1
-
-        return image # returns a 8-bit RGB array
+        # returns a 8-bit RGB array
+        return image
 
 
 class Sim(BaseCommand):
