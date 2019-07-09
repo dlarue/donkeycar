@@ -193,14 +193,24 @@ class MakeMovie(BaseCommand):
     def parse_args(self, args):
         parser = argparse.ArgumentParser(prog='makemovie')
         parser.add_argument('--tub', help='The tub to make movie from')
-        parser.add_argument('--out', default='tub_movie.mp4', help='The movie filename to create. default: tub_movie.mp4')
-        parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
-        parser.add_argument('--model', default='None', help='the model to use to show control outputs')
+        parser.add_argument('--out', default='tub_movie.mp4',
+                            help='The movie filename to create. '
+                                 'default: tub_movie.mp4')
+        parser.add_argument('--config', default='./config.py',
+                            help='location of config file to use. '
+                                 'default: ./config.py')
+        parser.add_argument('--model', default='None',
+                            help='the model to use to show control outputs')
         parser.add_argument('--type', help='the model type to load')
-        parser.add_argument('--salient', action="store_true", help='should we overlay salient map showing avtivations')
-        parser.add_argument('--start', type=int, default=1, help='first frame to process')
-        parser.add_argument('--end', type=int, default=-1, help='last frame to process')
-        parser.add_argument('--scale', type=int, default=2, help='make image frame output larger by X mult')
+        parser.add_argument('--salient', action="store_true",
+                            help='should we overlay salient map '
+                                 'showing avtivations')
+        parser.add_argument('--start', type=int, default=1,
+                            help='first frame to process')
+        parser.add_argument('--end', type=int, default=-1,
+                            help='last frame to process')
+        parser.add_argument('--scale', type=int, default=2,
+                            help='make image frame output larger by X mult')
         parsed_args = parser.parse_args(args)
         return parsed_args, parser
 
@@ -225,7 +235,8 @@ class MakeMovie(BaseCommand):
 
         if args.salient:
             if args.model is None or "None" in args.model:
-                print("ERR>> salient visualization requires a model. Pass with the --model arg.")
+                print("ERR>> salient visualization requires a model. "
+                      "Pass with the --model arg.")
                 parser.print_help()
                 return
 
@@ -239,8 +250,9 @@ class MakeMovie(BaseCommand):
         conf = os.path.expanduser(args.config)
 
         if not os.path.exists(conf):
-            print("No config file at location: %s. Add --config to specify\
-                 location or run from dir containing config.py." % conf)
+            print("No config file at location: %s. Add --config to specify "
+                  ""
+                  "location or run from dir containing config.py." % conf)
             return
 
         try:
@@ -345,15 +357,18 @@ class MakeMovie(BaseCommand):
 
         pilot_angle, pilot_throttle = self.keras_part.run(pred_img)
 
+        length = self.cfg.IMAGE_H
+        if use_speed:
+            length /= self.cfg.MAX_SPEED
         a1 = user_angle * 45.0
-        l1 = user_throttle * 3.0 * (20.0 if use_speed else 80.0)
+        l1 = user_throttle * length
         a2 = pilot_angle * 45.0
-        l2 = pilot_throttle * 3.0 * (20.0 if use_speed else 80.0)
+        l2 = pilot_throttle * length
 
         mid = self.cfg.IMAGE_W // 2 - 1
 
-        p1 = tuple((mid - 2, 119))
-        p2 = tuple((mid + 2, 119))
+        p1 = tuple((mid - 2, self.cfg.IMAGE_H - 1))
+        p2 = tuple((mid + 2, self.cfg.IMAGE_H - 1))
         p11 = tuple((int(p1[0] + l1 * math.cos((a1 + 270.0) * self.deg_to_rad)),
                      int(p1[1] + l1 * math.sin((a1 + 270.0) * self.deg_to_rad))))
         p22 = tuple((int(p2[0] + l2 * math.cos((a2 + 270.0) * self.deg_to_rad)),
