@@ -799,7 +799,6 @@ class ShowPredictionPlots(BaseCommand):
     def plot_predictions(self, cfg, tub_paths, model_path, limit, model_type):
         '''
         Plot model predictions for angle and throttle against data from tubs.
-
         '''
         import matplotlib.pyplot as plt
         import pandas as pd
@@ -892,21 +891,19 @@ def execute_from_command_line():
     """
     This is the function linked to the "donkey" terminal command.
     """
-    commands = {
-            'createcar': CreateCar,
-            'findcar': FindCar,
-            'calibrate': CalibrateCar,
-            'tubclean': TubManager,
-            'tubhist': ShowHistogram,
-            'tubplot': ShowPredictionPlots,
-            'tubcheck': TubCheck,
-            'makemovie': MakeMovie,
-            'sim': Sim,
-            'createjs': CreateJoystick,
-            'consync': ConSync,
-            'contrain': ConTrain,
-            'cnnactivations': ShowCnnActivations,
-                }
+    commands = {'createcar': CreateCar,
+                'findcar': FindCar,
+                'calibrate': CalibrateCar,
+                'tubclean': TubManager,
+                'tubhist': ShowHistogram,
+                'tubplot': ShowPredictionPlots,
+                'tubcheck': TubCheck,
+                'makemovie': MakeMovie,
+                'sim': Sim,
+                'createjs': CreateJoystick,
+                'consync': ConSync,
+                'contrain': ConTrain,
+                'cnnactivations': ShowCnnActivations}
 
     args = sys.argv[:]
 
