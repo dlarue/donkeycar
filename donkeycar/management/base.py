@@ -803,6 +803,7 @@ class ShowPredictionPlots(BaseCommand):
         '''
         import matplotlib.pyplot as plt
         import pandas as pd
+        from progress.bar import Bar
 
         model_path = os.path.expanduser(model_path)
         model = dk.utils.get_model_by_type(model_type, cfg)
@@ -817,38 +818,47 @@ class ShowPredictionPlots(BaseCommand):
         pilot_angles = []
         pilot_throttles = []
 
-        records = records[:limit]
+        records = records[:int(limit)]
         num_records = len(records)
         print('processing %d records:' % num_records)
 
+        use_speed = False
+        if cfg.USE_SPEED_FOR_MODEL is not None:
+            use_speed = cfg.USE_SPEED_FOR_MODEL
+        throttle_key = 'car/speed' if use_speed else 'user/throttle'
+
+        bar = Bar('Processing', max=num_records)
         for record_path in records:
             with open(record_path, 'r') as fp:
                 record = json.load(fp)
             img_filename = os.path.join(tub_paths, record['cam/image_array'])
             img = load_scaled_image_arr(img_filename, cfg)
             user_angle = float(record["user/angle"])
-            user_throttle = float(record["user/throttle"])
+            user_throttle = float(record[throttle_key])
             pilot_angle, pilot_throttle = model.run(img)
 
             user_angles.append(user_angle)
             user_throttles.append(user_throttle)
             pilot_angles.append(pilot_angle)
             pilot_throttles.append(pilot_throttle)
+            bar.next()
 
-        angles_df = pd.DataFrame({'user_angle': user_angles, 'pilot_angle': pilot_angles})
-        throttles_df = pd.DataFrame({'user_throttle': user_throttles, 'pilot_throttle': pilot_throttles})
+        bar.finish()
+
+        angles_df = pd.DataFrame({'user_angle': user_angles,
+                                  'pilot_angle': pilot_angles})
+        throttles_df = pd.DataFrame({'user_throttle': user_throttles,
+                                     'pilot_throttle': pilot_throttles})
 
         fig = plt.figure()
-
-        title = "Model Predictions\nTubs: " + tub_paths + "\nModel: " + model_path + "\nType: " + model_type
+        title = "Model Predictions\nTubs: " + tub_paths + "\nModel: " \
+                + model_path + "\nType: " + model_type
         fig.suptitle(title)
-
         ax1 = fig.add_subplot(211)
         ax2 = fig.add_subplot(212)
 
         angles_df.plot(ax=ax1)
         throttles_df.plot(ax=ax2)
-
         ax1.legend(loc=4)
         ax2.legend(loc=4)
 
@@ -856,12 +866,18 @@ class ShowPredictionPlots(BaseCommand):
         plt.show()
 
     def parse_args(self, args):
-        parser = argparse.ArgumentParser(prog='tubplot', usage='%(prog)s [options]')
-        parser.add_argument('--tub', nargs='+', help='paths to tubs')
-        parser.add_argument('--model', default=None, help='name of record to create histogram')
-        parser.add_argument('--limit', default=1000, help='how many records to process')
-        parser.add_argument('--type', default=None, help='model type')
-        parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
+        parser = argparse.ArgumentParser(prog='tubplot',
+                                         usage='%(prog)s [options]')
+        parser.add_argument('--tub', nargs='+',
+                            help='paths to tubs')
+        parser.add_argument('--model', default=None,
+                            help='name of record to create histogram')
+        parser.add_argument('--limit', default=1000,
+                            help='how many records to process')
+        parser.add_argument('--type', default=None,
+                            help='model type')
+        parser.add_argument('--config', default='./config.py',
+                            help='location of config file to use. default: ./config.py')
         parsed_args = parser.parse_args(args)
         return parsed_args
 
