@@ -39,8 +39,6 @@ class KerasPilot(object):
 
     def load(self, model_path):
         self.model = keras.models.load_model(model_path)
-        print("Model", model_path, "loaded:")
-        print(self.model.summary())
 
     def load_weights(self, model_path, by_name=True):
         self.model.load_weights(model_path, by_name=by_name)
