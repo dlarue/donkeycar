@@ -70,6 +70,7 @@ class Odometer:
         """
         import pigpio
         self._cb.cancel()
-        print('Maximum speed', self._max_speed,
-              'total distance', float(self._distance)/float(self._tick_per_meter))
+        print('Maximum speed {0:4.2f}, total distance {1:4.2f}'
+              .format(self._max_speed,
+                      float(self._distance) / float(self._tick_per_meter)))
 
