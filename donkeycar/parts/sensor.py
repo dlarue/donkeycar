@@ -24,7 +24,9 @@ class Odometer:
         self._last_tick = None
         self._last_tick_speed = None
         self._weight = weight
-        self._avg = 0
+        self._avg = 0.0
+        self._max_speed = 0.0
+        self._distance = 0
         self._debug = debug
 
         # pigpio callback mechanics
@@ -44,6 +46,7 @@ class Odometer:
         if self._last_tick is not None:
             diff = pigpio.tickDiff(self._last_tick, tick)
             self._avg = self._weight * diff + (1.0 - self._weight) * self._avg
+            self._distance += 1
         self._last_tick = tick
 
     def run(self):
@@ -55,6 +58,7 @@ class Odometer:
         speed = 0.0
         if self._last_tick_speed != self._last_tick and self._avg != 0.0:
             speed = 1.0e6 / (self._avg * self._tick_per_meter)
+            self._max_speed = max(self._max_speed, speed)
         self._last_tick_speed = self._last_tick
         if self._debug:
             print("Speed =", speed)
@@ -66,4 +70,6 @@ class Odometer:
         """
         import pigpio
         self._cb.cancel()
+        print('Maximum speed', self._max_speed,
+              'total distance', float(self._distance)/float(self._tick_per_meter))
 
