@@ -255,26 +255,13 @@ class MakeMovie(BaseCommand):
                   "location or run from dir containing config.py." % conf)
             return
 
-        try:
-            self.cfg = dk.load_config(conf)
-        except:
-            print("Exception while loading config from", conf)
-            return
-
+        self.cfg = dk.load_config(conf)
         self.tub = Tub(args.tub)
         self.index = self.tub.get_index(shuffled=False)
-        self.num_rec = len(self.index)
-
-        self.start = args.start
-
-        if args.end != -1:
-            self.end = args.end
-        else:
-            self.end = self.num_rec
-
-        self.num_rec = self.end - self.start
-
-        self.iRec = args.start
+        start = args.start
+        self.end = args.end if args.end != -1 else len(self.index)
+        num_frames = self.end - start
+        self.iRec = start
         self.scale = args.scale
         self.keras_part = None
         self.convolution_part = None
@@ -315,9 +302,9 @@ class MakeMovie(BaseCommand):
                     return (final_visualisation_mask - np.min(final_visualisation_mask))/(np.max(final_visualisation_mask) - np.min(final_visualisation_mask))
                 self.compute_visualisation_mask = compute_visualisation_mask
 
-        print('making movie', args.out, 'from', self.num_rec, 'images')
+        print('making movie', args.out, 'from', num_frames, 'images')
         clip = mpy.VideoClip(self.make_frame,
-                             duration=(self.num_rec//self.cfg.DRIVE_LOOP_HZ) - 1)
+                             duration=((num_frames - 1) / self.cfg.DRIVE_LOOP_HZ))
         clip.write_videofile(args.out, fps=self.cfg.DRIVE_LOOP_HZ)
 
     def draw_model_prediction(self, record, img):
@@ -385,10 +372,8 @@ class MakeMovie(BaseCommand):
 
         import cv2
 
-        orig_shape = img.shape
         pred_img = img.reshape((1,) + img.shape)
         angle_binned, throttle = self.keras_part.model.predict(pred_img)
-        #img.reshape(orig_shape)
 
         x = 4
         dx = 4
@@ -403,13 +388,10 @@ class MakeMovie(BaseCommand):
                 cv2.line(img, p1, p2, (200, 200, 200), 2)
             x += dx
 
-
     def init_salient(self, model):
-        #from https://github.com/ermolenkodev/keras-salient-object-visualisation
-        from tensorflow.python.keras.layers import Input, Dense, merge
+        # from https://github.com/ermolenkodev/keras-salient-object-visualisation
+        from tensorflow.python.keras.layers import Input, Convolution2D
         from tensorflow.python.keras.models import Model
-        from tensorflow.python.keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
-        from tensorflow.python.keras.layers import Activation, Dropout, Flatten, Dense
 
         input_shape = model.inputs[0].shape
 
@@ -422,14 +404,10 @@ class MakeMovie(BaseCommand):
         conv_5 = Convolution2D(64, (3,3), strides=(1,1), activation='relu', name='conv5')(x)
         self.convolution_part = Model(inputs=[img_in], outputs=[conv_5])
 
-        #print("input model summary:")
-        #print(model.summary())
-        #print("conv model summary:")
-        #print(self.convolution_part.summary())
-
         for layer_num in ('1', '2', '3', '4', '5'):
             try:
-                self.convolution_part.get_layer('conv' + layer_num).set_weights(model.get_layer('conv2d_' + layer_num).get_weights())
+                self.convolution_part.get_layer('conv' + layer_num).set_weights(
+                    model.get_layer('conv2d_' + layer_num).get_weights())
             except Exception as e:
                 print(e)
                 print("Failed to load layer weights for layer", layer_num)
@@ -444,22 +422,30 @@ class MakeMovie(BaseCommand):
         self.functor = K.function([self.inp], self.outputs)
 
         kernel_3x3 = tf.constant(np.array([
-        [[[1]], [[1]], [[1]]],
-        [[[1]], [[1]], [[1]]],
-        [[[1]], [[1]], [[1]]]
+            [[[1]], [[1]], [[1]]],
+            [[[1]], [[1]], [[1]]],
+            [[[1]], [[1]], [[1]]]
         ]), tf.float32)
 
         kernel_5x5 = tf.constant(np.array([
-                [[[1]], [[1]], [[1]], [[1]], [[1]]],
-                [[[1]], [[1]], [[1]], [[1]], [[1]]],
-                [[[1]], [[1]], [[1]], [[1]], [[1]]],
-                [[[1]], [[1]], [[1]], [[1]], [[1]]],
-                [[[1]], [[1]], [[1]], [[1]], [[1]]]
+            [[[1]], [[1]], [[1]], [[1]], [[1]]],
+            [[[1]], [[1]], [[1]], [[1]], [[1]]],
+            [[[1]], [[1]], [[1]], [[1]], [[1]]],
+            [[[1]], [[1]], [[1]], [[1]], [[1]]],
+            [[[1]], [[1]], [[1]], [[1]], [[1]]]
         ]), tf.float32)
 
-        self.layers_kernels = {5: kernel_3x3, 4: kernel_3x3, 3: kernel_5x5, 2: kernel_5x5, 1: kernel_5x5}
+        self.layers_kernels = {5: kernel_3x3,
+                               4: kernel_3x3,
+                               3: kernel_5x5,
+                               2: kernel_5x5,
+                               1: kernel_5x5}
 
-        self.layers_strides = {5: [1, 1, 1, 1], 4: [1, 2, 2, 1], 3: [1, 2, 2, 1], 2: [1, 2, 2, 1], 1: [1, 2, 2, 1]}
+        self.layers_strides = {5: [1, 1, 1, 1],
+                               4: [1, 2, 2, 1],
+                               3: [1, 2, 2, 1],
+                               2: [1, 2, 2, 1],
+                               1: [1, 2, 2, 1]}
 
     def draw_salient(self, img):
         # from https://github.com/ermolenkodev/keras-salient-object-visualisation
@@ -471,7 +457,7 @@ class MakeMovie(BaseCommand):
         actual = img.shape
         pred_img = img
 
-        #check input depth
+        # check input depth
         if expected[2] == 1 and actual[2] == 3:
             pred_img = rgb2gray(pred_img)
             pred_img = pred_img.reshape(pred_img.shape + (1,))
@@ -494,18 +480,8 @@ class MakeMovie(BaseCommand):
         if self.iRec >= self.end:
             return None
 
-        rec = None
-
-        while rec is None and self.iRec < self.end:
-            try:
-                rec_ix = self.index[self.iRec]
-                rec = self.tub.get_record(rec_ix)
-            except Exception as e:
-                print(e)
-                print("Failed to get image for frame", rec_ix)
-                self.iRec = self.iRec + 1
-                rec = None
-
+        rec_ix = self.index[self.iRec]
+        rec = self.tub.get_record(rec_ix)
         image = rec['cam/image_array']
 
         if self.convolution_part:
@@ -522,7 +498,7 @@ class MakeMovie(BaseCommand):
             dsize = (w * self.scale, h * self.scale)
             image = cv2.resize(image, dsize=dsize, interpolation=cv2.INTER_CUBIC)
 
-        self.iRec = self.iRec + 1
+        self.iRec += 1
         # returns a 8-bit RGB array
         return image
 
