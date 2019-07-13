@@ -286,12 +286,13 @@ class MakeMovie(BaseCommand):
                         averaged_activation = np.mean(activations[layer], axis=3).squeeze(axis=0) * upscaled_activation
                         output_shape = (activations[layer - 1].shape[1], activations[layer - 1].shape[2])
                         x = tf.constant(
-                            np.reshape(averaged_activation, (1,averaged_activation.shape[0],averaged_activation.shape[1],1)),
+                            np.reshape(averaged_activation,
+                                       (1, averaged_activation.shape[0], averaged_activation.shape[1], 1)),
                             tf.float32
                         )
                         conv = tf.nn.conv2d_transpose(
                             x, self.layers_kernels[layer],
-                            output_shape=(1,output_shape[0],output_shape[1], 1),
+                            output_shape=(1, output_shape[0], output_shape[1], 1),
                             strides=self.layers_strides[layer],
                             padding='VALID'
                         )
@@ -299,7 +300,8 @@ class MakeMovie(BaseCommand):
                             result = session.run(conv)
                         upscaled_activation = np.reshape(result, output_shape)
                     final_visualisation_mask = upscaled_activation
-                    return (final_visualisation_mask - np.min(final_visualisation_mask))/(np.max(final_visualisation_mask) - np.min(final_visualisation_mask))
+                    return (final_visualisation_mask - np.min(final_visualisation_mask))\
+                        / (np.max(final_visualisation_mask) - np.min(final_visualisation_mask))
                 self.compute_visualisation_mask = compute_visualisation_mask
 
         print('making movie', args.out, 'from', num_frames, 'images')
@@ -461,11 +463,10 @@ class MakeMovie(BaseCommand):
         if expected[2] == 1 and actual[2] == 3:
             pred_img = rgb2gray(pred_img)
             pred_img = pred_img.reshape(pred_img.shape + (1,))
-            actual = pred_img.shape
 
         salient_mask = self.compute_visualisation_mask(pred_img)
-        salient_mask_stacked = np.dstack((salient_mask,salient_mask))
-        salient_mask_stacked = np.dstack((salient_mask_stacked,salient_mask))
+        salient_mask_stacked = np.dstack((salient_mask, salient_mask))
+        salient_mask_stacked = np.dstack((salient_mask_stacked, salient_mask))
         blend = cv2.addWeighted(img.astype('float32'), alpha, salient_mask_stacked, beta, 0.0)
         return blend
 
