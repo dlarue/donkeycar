@@ -13,9 +13,11 @@ from donkeycar.utils import *
 from donkeycar.management.tub import TubManager
 from donkeycar.management.joystick_creator import CreateJoystick
 import numpy as np
+from prettytable import PrettyTable
 
 PACKAGE_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 TEMPLATES_PATH = os.path.join(PACKAGE_PATH, 'templates')
+
 
 def make_dir(path):
     real_path = os.path.expanduser(path)
@@ -33,8 +35,8 @@ def load_config(config_path):
     conf = os.path.expanduser(config_path)
 
     if not os.path.exists(conf):
-        print("No config file at location: %s. Add --config to specify\
-                location or run from dir containing config.py." % conf)
+        print("No config file at location: %s. Add --config to specify "
+              "location or run from dir containing config.py." % conf)
         return None
 
     try:
@@ -864,6 +866,75 @@ class ShowPredictionPlots(BaseCommand):
         self.plot_predictions(cfg, args.tub, args.model, args.limit, args.type)
 
 
+class ShowPredictionMetric(BaseCommand):
+
+    def evaluate_predictions(self, cfg, tub_paths, model_path, limit, model_type):
+        '''
+        Plot model predictions for angle and throttle against data from tubs.
+        '''
+        from progress.bar import Bar
+
+        model_path = os.path.expanduser(model_path)
+        model = dk.utils.get_model_by_type(model_type, cfg)
+        model.load(model_path)
+
+        records = gather_records(cfg, tub_paths)
+        records = records[:int(limit)]
+        num_records = len(records)
+        print('Processing %d records:' % num_records)
+
+        use_speed = False
+        if cfg.USE_SPEED_FOR_MODEL is not None:
+            use_speed = cfg.USE_SPEED_FOR_MODEL
+        throttle_key = 'car/speed' if use_speed else 'user/throttle'
+
+        X = np.empty((0, cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH))
+        angle = []
+        throttle = []
+        bar = Bar('Concatenating data', max=num_records)
+        for record_path in records:
+            with open(record_path, 'r') as fp:
+                record = json.load(fp)
+            img_filename = os.path.join(tub_paths, record['cam/image_array'])
+            img = load_scaled_image_arr(img_filename, cfg)
+            X = np.append(X, [img], axis=0)
+            angle.append(float(record["user/angle"]))
+            throttle.append(float(record[throttle_key]))
+            bar.next()
+
+        bar.finish()
+
+        result = model.model.evaluate(x=X,
+                                      y=[np.array(angle), np.array(throttle)])
+
+        pt = PrettyTable()
+        pt.field_names = model.model.metrics_names
+        pt.add_row(["%6.4f" % z for z in result])
+        print(pt)
+
+    def parse_args(self, args):
+        parser = argparse.ArgumentParser(prog='tubpredict',
+                                         usage='%(prog)s [options]')
+        parser.add_argument('--tub', nargs='+',
+                            help='paths to tubs')
+        parser.add_argument('--model', default=None,
+                            help='path to calibrated model')
+        parser.add_argument('--limit', default=1000,
+                            help='how many records to process')
+        parser.add_argument('--type', default=None,
+                            help='model type')
+        parser.add_argument('--config', default='./config.py',
+                            help='location of config file to use. default: ./config.py')
+        parsed_args = parser.parse_args(args)
+        return parsed_args
+
+    def run(self, args):
+        args = self.parse_args(args)
+        args.tub = ','.join(args.tub)
+        cfg = load_config(args.config)
+        self.evaluate_predictions(cfg, args.tub, args.model, args.limit, args.type)
+
+
 def execute_from_command_line():
     """
     This is the function linked to the "donkey" terminal command.
@@ -874,6 +945,7 @@ def execute_from_command_line():
                 'tubclean': TubManager,
                 'tubhist': ShowHistogram,
                 'tubplot': ShowPredictionPlots,
+                'tubpredict': ShowPredictionMetric,
                 'tubcheck': TubCheck,
                 'makemovie': MakeMovie,
                 'sim': Sim,
