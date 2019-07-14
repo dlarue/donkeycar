@@ -888,22 +888,23 @@ class ShowPredictionMetric(BaseCommand):
             use_speed = cfg.USE_SPEED_FOR_MODEL
         throttle_key = 'car/speed' if use_speed else 'user/throttle'
 
-        X = np.empty((0, cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH))
-        angle = []
-        throttle = []
-        bar = Bar('Concatenating data', max=num_records)
+        X = np.zeros((num_records, cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH))
+        angle = np.zeros(num_records)
+        throttle = np.zeros(num_records)
+        bar = Bar('Concatenating data ', max=num_records)
+        i = 0
         for record_path in records:
             with open(record_path, 'r') as fp:
                 record = json.load(fp)
             img_filename = os.path.join(tub_paths, record['cam/image_array'])
             img = load_scaled_image_arr(img_filename, cfg)
-            X = np.append(X, [img], axis=0)
-            angle.append(float(record["user/angle"]))
-            throttle.append(float(record[throttle_key]))
+            X[i] = img
+            angle[i] = float(record["user/angle"])
+            throttle[i] = float(record[throttle_key])
+            i += 1
             bar.next()
 
         bar.finish()
-
         result = model.model.evaluate(x=X,
                                       y=[np.array(angle), np.array(throttle)])
 
