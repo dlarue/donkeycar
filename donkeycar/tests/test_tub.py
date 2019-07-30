@@ -83,9 +83,6 @@ class TestTubWriter(unittest.TestCase):
         rel_file_name = 'test.jpg'
         record_dict = {'file_path': rel_file_name}
         abs_record_dict = tub.make_record_paths_absolute(record_dict)
-        print('Expected path:', abs_record_dict['file_path'],
-              'Produced path:', os.path.join(self.path, rel_file_name))
-
         assert abs_record_dict['file_path'] == os.path.join(self.path, rel_file_name)
 
     def test_tub_meta(self):
