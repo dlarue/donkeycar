@@ -79,10 +79,12 @@ class TestTubWriter(unittest.TestCase):
         tub.run('will', 323, 'asdfasdf')
 
     def test_make_paths_absolute(self):
-        tub = Tub(self.path, inputs=['file_path'], types=['image'])
+        tub = Tub(self.path, inputs=['file_path'], types=['image_array'])
         rel_file_name = 'test.jpg'
         record_dict = {'file_path': rel_file_name}
         abs_record_dict = tub.make_record_paths_absolute(record_dict)
+        print('Expected path:', abs_record_dict['file_path'],
+              'Produced path:', os.path.join(self.path, rel_file_name))
 
         assert abs_record_dict['file_path'] == os.path.join(self.path, rel_file_name)
 
