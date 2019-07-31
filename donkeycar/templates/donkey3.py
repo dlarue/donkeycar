@@ -144,7 +144,7 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None):
         types = ['image_array', 'float', 'float', 'float', 'str']
         # multiple tubs
         tub_hand = TubHandler(path=cfg.DATA_PATH)
-        tub = tub_hand.new_tub_writer(inputs=inputs, types=types)
+        tub = tub_hand.new_tub_writer(inputs=inputs, types=types, allow_reverse=False)
         donkey_car.add(tub, inputs=inputs, outputs=["tub/num_records"],
                        run_condition='user/recording')
 

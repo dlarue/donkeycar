@@ -30,7 +30,7 @@ class Tub(object):
     t=Tub(path=path, inputs=inputs, types=types)
     """
 
-    def __init__(self, path, inputs=None, types=None, user_meta=[], allow_reverse=False):
+    def __init__(self, path, inputs=None, types=None, user_meta=[], allow_reverse=True):
 
         self.path = os.path.expanduser(path)
         self.meta_path = os.path.join(self.path, 'meta.json')
@@ -500,9 +500,10 @@ class TubHandler():
         tub_path = os.path.join(self.path, name)
         return tub_path
 
-    def new_tub_writer(self, inputs, types, user_meta=[]):
+    def new_tub_writer(self, inputs, types, user_meta=[], allow_reverse=True):
         tub_path = self.create_tub_path()
-        tw = TubWriter(path=tub_path, inputs=inputs, types=types, user_meta=user_meta)
+        tw = TubWriter(path=tub_path, inputs=inputs, types=types,
+                       user_meta=user_meta, allow_reverse=allow_reverse)
         return tw
 
 
