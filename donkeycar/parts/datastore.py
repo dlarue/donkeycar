@@ -303,7 +303,7 @@ class Tub(object):
                             'You may want to run `donkey tubcheck --fix`' % ix)
 
         # if negative or zero car speed values are recorded
-        if json_data["car/speed"] <= 0.0:
+        if "car/speed" in json_data and json_data["car/speed"] <= 0.0:
             raise Exception('Bad record: %d. "car/speed" should be >0 for '
                             'recorded data. '
                             'You may want to run `donkey tubcheck --fix`' % ix)

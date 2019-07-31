@@ -80,8 +80,10 @@ def collate_records(records, gen_records, opts):
     use the opts dict to specify config choices
     '''
 
-    throttle_key = 'car/speed' if opts['cfg'].USE_SPEED_FOR_MODEL \
-        else 'user/throttle'
+    throttle_key = 'user/throttle'
+    if hasattr(opts['cfg'], 'USE_SPEED_FOR_MODEL') and opts['cfg'].USE_SPEED_FOR_MODEL:
+        throttle_key = 'car/speed'
+
     print('Using', throttle_key, 'for training')
     new_records = {}
 
@@ -677,10 +679,10 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type,
         records += record_paths
 
     gen_records = {}
-    throttle_key = 'car/speed' if cfg.USE_SPEED_FOR_MODEL \
-        else 'user/throttle'
+    throttle_key = 'user/throttle'
+    if hasattr(cfg, 'USE_SPEED_FOR_MODEL') and cfg.USE_SPEED_FOR_MODEL:
+        throttle_key = 'car/speed'
     print('Collating records, using', throttle_key, 'for training')
-
 
     for record_path in records:
 
