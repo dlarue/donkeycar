@@ -8,6 +8,7 @@ Created on Wed Sep 13 21:27:44 2017
 import os
 import types
 
+
 class Config:
 
     def from_pyfile(self, filename, silent=False):
@@ -40,7 +41,6 @@ class Config:
         for attr in dir(self):
             if attr.isupper():
                 print(attr, ":", getattr(self, attr))
-
 
 
 def load_config(config_path=None):
