@@ -48,5 +48,8 @@ jobs:
         on:
           tags: true
 
+env:
+    - CODECOV_TOKEN=81b51991-90a7-4d3b-9c86-b4f3afca8a4f
+
 after_success:
 - codecov
