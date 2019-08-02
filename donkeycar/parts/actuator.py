@@ -700,17 +700,19 @@ class Mini_HBridge_DC_Motor_PWM(object):
         self.pwm_b.stop()
         GPIO.cleanup()
 
-def map_frange(self, x, X_min, X_max, Y_min, Y_max):
+
+def map_frange(x, X_min, X_max, Y_min, Y_max):
     '''
-    Linear mapping between two ranges of values
+    Linear mapping between two ranges of values, helper function for below
     '''
     X_range = X_max - X_min
     Y_range = Y_max - Y_min
     XY_ratio = X_range/Y_range
 
-    y = ((x-X_min) / XY_ratio + Y_min)
+    y = ((x - X_min) / XY_ratio + Y_min)
 
     return y
+
 
 class RPi_GPIO_Servo(object):
     '''
