@@ -66,6 +66,10 @@ class MakeMovie(object):
             if args.salient:
                 self.do_salient = self.init_salient(self.keras_part.model)
 
+        self.use_speed = False
+        if hasattr(self.cfg, 'USE_SPEED_FOR_MODEL'):
+            self.use_speed = self.cfg.USE_SPEED_FOR_MODEL
+
         print('making movie', args.out, 'from', num_frames, 'images')
         clip = mpy.VideoClip(self.make_frame,
                              duration=((num_frames - 1) / self.cfg.DRIVE_LOOP_HZ))
@@ -79,7 +83,8 @@ class MakeMovie(object):
         import cv2
 
         user_angle = float(record["user/angle"])
-        user_throttle = float(record["user/throttle"])
+        user_throttle_var = 'car/speed' if self.use_speed else 'user/throttle'
+        user_throttle = float(record[user_throttle_var])
 
         height, width, _ = img.shape
 
@@ -126,6 +131,8 @@ class MakeMovie(object):
         height, width, _ = pred_img.shape
 
         length = height
+        if self.use_speed:
+            length /= self.cfg.MAX_SPEED
         a2 = pilot_angle * 45.0
         l2 = pilot_throttle * length
 

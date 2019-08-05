@@ -217,69 +217,11 @@ class MakeMovieShell(BaseCommand):
         Load the images from a tub and create a movie from them.
         Movie
         '''
+        args, parser = self.parse_args(args)
         from donkeycar.management.makemovie import MakeMovie
 
         mm = MakeMovie()
         mm.run(args, parser)
-
-    # check this code against new file
-    def draw_model_prediction(self, record, img):
-        '''
-        query the model for it's prediction, draw the user input and the predictions
-        as green and blue lines on the image
-        '''
-        if self.keras_part is None:
-            return
-
-        import cv2
-
-        use_speed = False
-        if self.cfg.USE_SPEED_FOR_MODEL is not None:
-            use_speed = self.cfg.USE_SPEED_FOR_MODEL
-
-        user_throttle_var = 'car/speed' if use_speed else 'user/throttle'
-        user_angle = float(record["user/angle"])
-        user_throttle = float(record[user_throttle_var])
-        expected = self.keras_part.model.inputs[0].shape[1:]
-        actual = img.shape
-        pred_img = img
-
-        # check input depth
-        if expected[2] == 1 and actual[2] == 3:
-            pred_img = rgb2gray(pred_img)
-            pred_img = pred_img.reshape(pred_img.shape + (1,))
-            actual = pred_img.shape
-
-        if expected != actual:
-            print("expected input dim", expected, "didn't match actual dim", actual)
-            return
-
-        pilot_angle, pilot_throttle = self.keras_part.run(pred_img)
-
-        length = self.cfg.IMAGE_H
-        if use_speed:
-            length /= self.cfg.MAX_SPEED
-        a1 = user_angle * 45.0
-        l1 = user_throttle * length
-        a2 = pilot_angle * 45.0
-        l2 = pilot_throttle * length
-
-        mid = self.cfg.IMAGE_W // 2 - 1
-
-        p1 = tuple((mid - 2, self.cfg.IMAGE_H - 1))
-        p2 = tuple((mid + 2, self.cfg.IMAGE_H - 1))
-        p11 = tuple((int(p1[0] + l1 * math.cos((a1 + 270.0) * self.deg_to_rad)),
-                     int(p1[1] + l1 * math.sin((a1 + 270.0) * self.deg_to_rad))))
-        p22 = tuple((int(p2[0] + l2 * math.cos((a2 + 270.0) * self.deg_to_rad)),
-                     int(p2[1] + l2 * math.sin((a2 + 270.0) * self.deg_to_rad))))
-
-        # user is green, pilot is blue
-        cv2.line(img, p1, p11, (0, 255, 0), 2)
-        cv2.line(img, p2, p22, (0, 0, 255), 2)
-
-
-
-
 
 
 class TubCheck(BaseCommand):
