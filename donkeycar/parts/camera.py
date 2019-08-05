@@ -16,7 +16,7 @@ class PiCamera(BaseCamera):
     def __init__(self, image_w=160, image_h=120, image_d=3, framerate=20):
         from picamera.array import PiRGBArray
         from picamera import PiCamera
-        
+
         resolution = (image_w, image_h)
         # initialize the camera and stream
         self.camera = PiCamera()  # PiCamera gets resolution (height, width)
@@ -62,7 +62,7 @@ class PiCamera(BaseCamera):
     def shutdown(self):
         # indicate that the thread should be stopped
         self.on = False
-        print('PiCamera stopped')
+        print('Stopping PiCamera')
         time.sleep(.5)
         self.stream.close()
         self.rawCapture.close()
@@ -131,8 +131,8 @@ class CSICamera(BaseCamera):
     Camera for Jetson Nano IMX219 based camera
     Credit: https://github.com/feicccccccc/donkeycar/blob/dev/donkeycar/parts/camera.py
     '''
-    def gstreamer_pipeline(self,capture_width=120, capture_height=160, display_width=120, display_height=160, framerate=20, flip_method=0) :   
-        return ('nvarguscamerasrc ! ' 
+    def gstreamer_pipeline(self,capture_width=120, capture_height=160, display_width=120, display_height=160, framerate=20, flip_method=0) :
+        return ('nvarguscamerasrc ! '
         'video/x-raw(memory:NVMM), '
         'width=(int)%d, height=(int)%d, '
         'format=(string)NV12, framerate=(fraction)%d/1 ! '
@@ -140,12 +140,13 @@ class CSICamera(BaseCamera):
         'video/x-raw, width=(int)%d, height=(int)%d, format=(string)BGRx ! '
         'videoconvert ! '
         'video/x-raw, format=(string)BGR ! appsink'  % (capture_width,capture_height,framerate,flip_method,display_width,display_height))
-    
-    def __init__(self, image_w=160, image_h=120, image_d=3, framerate=60):
+
+    def __init__(self, image_w=160, image_h=120, image_d=3, framerate=60, gstreamer_flip=0):
         self.w = image_w
         self.h = image_h
         self.running = True
         self.frame = None
+        self.flip_method = gstreamer_flip
 
     def init_camera(self):
         import cv2
@@ -154,14 +155,14 @@ class CSICamera(BaseCamera):
         self.camera = cv2.VideoCapture(\
             self.gstreamer_pipeline(\
                 display_width=self.w,\
-                    display_height=self.h,
-                    flip_method=0),
+                    display_height=self.h,\
+                    flip_method=self.flip_method),
                     cv2.CAP_GSTREAMER)
 
         self.poll_camera()
         print('CSICamera loaded.. .warming camera')
         time.sleep(2)
-        
+
     def update(self):
         self.init_camera()
         while self.running:
@@ -178,7 +179,7 @@ class CSICamera(BaseCamera):
 
     def run_threaded(self):
         return self.frame
-    
+
     def shutdown(self):
         self.running = False
         print('stoping CSICamera')
@@ -254,7 +255,7 @@ class MockCamera(BaseCamera):
         if image is not None:
             self.frame = image
         else:
-            self.frame = Image.new('RGB', (image_w, image_h))
+            self.frame = np.array(Image.new('RGB', (image_w, image_h)))
 
     def update(self):
         pass
@@ -268,7 +269,7 @@ class ImageListCamera(BaseCamera):
     '''
     def __init__(self, path_mask='~/mycar/data/**/*.jpg'):
         self.image_filenames = glob.glob(os.path.expanduser(path_mask), recursive=True)
-    
+
         def get_image_index(fnm):
             sl = os.path.basename(fnm).split('_')
             return int(sl[0])
@@ -291,10 +292,10 @@ class ImageListCamera(BaseCamera):
     def update(self):
         pass
 
-    def run_threaded(self):        
+    def run_threaded(self):
         if self.num_images > 0:
             self.i_frame = (self.i_frame + 1) % self.num_images
-            self.frame = Image.open(self.image_filenames[self.i_frame]) 
+            self.frame = Image.open(self.image_filenames[self.i_frame])
 
         return np.asarray(self.frame)
 
