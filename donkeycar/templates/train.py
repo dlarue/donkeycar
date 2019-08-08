@@ -18,23 +18,18 @@ Options:
                      Option may be used more than once.
 """
 
-import random
 import json
-import time
 import zlib
-import glob
 from os.path import basename, join, splitext, dirname
 import pickle
 import datetime
 
 from tensorflow.python import keras
 from docopt import docopt
-import numpy as np
-from PIL import Image
 
 import donkeycar as dk
-from donkeycar.parts.keras import KerasIMU, KerasCategorical, \
-    KerasBehavioral, KerasLatent
+from donkeycar.parts.keras import KerasIMU,\
+     KerasCategorical, KerasBehavioral, KerasLatent
 from donkeycar.parts.augment import augment_image
 from donkeycar.utils import *
 
@@ -513,6 +508,8 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
     steps_per_epoch = 100 if continuous else num_train // cfg.BATCH_SIZE
     val_steps = num_val // cfg.BATCH_SIZE
     print('steps_per_epoch', steps_per_epoch)
+
+    cfg.model_type = model_type
 
     go_train(kl, cfg, train_gen, val_gen, gen_records, model_name,
              steps_per_epoch, val_steps, continuous, verbose, save_best)
