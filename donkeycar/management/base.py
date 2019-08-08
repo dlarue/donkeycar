@@ -171,10 +171,11 @@ class CalibrateCar(BaseCommand):
         if args.bus:
             bus_num = int(args.bus)
         address = int(args.address, 16)
-        print('init PCA9685 on channel %d address %s bus %s' %(channel, str(hex(address)), str(busnum)))
+        print('init PCA9685 on channel %d address %s bus %s'
+              % (channel, str(hex(address)), str(bus_num)))
         freq = int(args.pwmFreq)
         print("Using PWM freq: {}".format(freq))
-        c = PCA9685(channel, address=address, busnum=busnum, frequency=freq)
+        c = PCA9685(channel, address=address, busnum=bus_num, frequency=freq)
         print()
         while True:
             try:

@@ -311,6 +311,9 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
     if continuous:
         print("continuous training")
 
+    gen_records = {}
+    opts = { 'cfg' : cfg}
+
     if "linear" in model_type:
         train_type = "linear"
     else:
@@ -325,7 +328,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
         print('loading weights from model', transfer_model)
         kl.load(transfer_model)
 
-        # when transferring models, should we freeze all but the last N layers?
+        #when transfering models, should we freeze all but the last N layers?
         if cfg.FREEZE_LAYERS:
             num_to_freeze = len(kl.model.layers) - cfg.NUM_LAST_LAYERS_TO_TRAIN
             print('freezing %d layers' % num_to_freeze)
@@ -386,6 +389,11 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
                 model_out_shape = (2, 1)
             else:
                 model_out_shape = kl.model.output.shape
+
+            if type(kl.model.input) is list:
+                model_in_shape = (2, 1)
+            else:
+                model_in_shape = kl.model.input.shape
 
             has_imu = type(kl) is KerasIMU
             has_bvh = type(kl) is KerasBehavioral
@@ -662,6 +670,8 @@ def go_train(kl, cfg, train_gen, val_gen, gen_records, model_name,
               'per iteration'.format(target_channels,
                                      cfg.PRUNE_PERCENT_PER_ITERATION / 100))
 
+        from keras.models import load_model
+        prune_loss = 0
         while cnn_channels > target_channels:
             save_best.reset_best()
             model, channels_deleted = prune(kl.model, prune_gen, 1, cfg)
@@ -827,6 +837,7 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type,
                 b_inputs_img = []
                 b_vec_in = []
                 b_labels = []
+                b_vec_out = []
 
                 for seq in batch_data:
                     inputs_img = []
@@ -888,6 +899,10 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type,
 
     train_gen = generator(train_data, opt)
     val_gen = generator(val_data, opt)
+
+    model_path = os.path.expanduser(model_name)
+
+    total_records = len(sequences)
     total_train = len(train_data)
     total_val = len(val_data)
 
@@ -927,7 +942,7 @@ def multi_train(cfg, tub, model, transfer, model_type, continuous, aug):
 def prune(model, validation_generator, val_steps, cfg):
     percent_pruning = float(cfg.PRUNE_PERCENT_PER_ITERATION)
     total_channels = get_total_channels(model)
-    n_channels_delete = int(math.floor(percent_pruning / 100.0 * total_channels))
+    n_channels_delete = int(math.floor(percent_pruning / 100 * total_channels))
 
     apoz_df = get_model_apoz(model, validation_generator)
     model = prune_model(model, apoz_df, n_channels_delete)
