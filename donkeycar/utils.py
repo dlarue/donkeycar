@@ -446,6 +446,9 @@ def get_model_by_type(model_type, cfg):
         # to happen when using TF-GPU for training.
         from donkeycar.parts.tensorrt import TensorRTLinear
         kl = TensorRTLinear(cfg=cfg)
+    elif model_type == "coral_tflite_linear":
+        from donkeycar.parts.coral import CoralLinearPilot
+        kl = CoralLinearPilot()
     elif model_type == "3d":
         kl = Keras3D_CNN(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, seq_length=cfg.SEQUENCE_LENGTH)
     elif model_type == "rnn":
@@ -454,6 +457,9 @@ def get_model_by_type(model_type, cfg):
         kl = KerasCategorical(input_shape=input_shape, throttle_range=cfg.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE, roi_crop=roi_crop)
     elif model_type == "latent":
         kl = KerasLatent(input_shape=input_shape)
+    elif model_type == "fastai":
+        from donkeycar.parts.fastai import FastAiPilot
+        kl = FastAiPilot()
     else:
         raise Exception("unknown model type: %s" % model_type)
 
