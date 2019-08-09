@@ -1,6 +1,3 @@
-import math
-
-import numpy as np
 import moviepy.editor as mpy
 from tensorflow.python.keras import activations
 
@@ -13,7 +10,7 @@ except:
 import donkeycar as dk
 from donkeycar.parts.datastore import Tub
 from donkeycar.utils import *
-from donkeycar.management.tub import TubManager
+
 
 class MakeMovie(object):
     def __init__(self):
@@ -89,6 +86,9 @@ class MakeMovie(object):
         height, width, _ = img.shape
 
         length = height
+        if self.use_speed:
+            length /= self.cfg.MAX_SPEED
+
         a1 = user_angle * 45.0
         l1 = user_throttle * length
 
@@ -114,7 +114,7 @@ class MakeMovie(object):
         expected = self.keras_part.model.inputs[0].shape[1:]
         actual = img.shape
 
-        #normalize image before prediction
+        # normalize image before prediction
         pred_img = img.astype(np.float32) / 255.0
 
         # check input depth
@@ -212,7 +212,6 @@ class MakeMovie(object):
         if expected[2] == 1 and actual[2] == 3:
             pred_img = rgb2gray(pred_img)
             pred_img = pred_img.reshape(pred_img.shape + (1,))
-            actual = pred_img.shape
 
         salient_mask = self.compute_visualisation_mask(pred_img)
         z = np.zeros_like(salient_mask)
