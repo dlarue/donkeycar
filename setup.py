@@ -66,7 +66,7 @@ setup(name='donkeycar',
               'responses',
           ],
           'ci': ['codecov'],
-          'tf': ['tensorflow=1.13.1'],
+          'tf': ['tensorflow==1.13.1'],
           'tf_gpu': ['tensorflow-gpu>=1.9.0'],
       },
       package_data={
