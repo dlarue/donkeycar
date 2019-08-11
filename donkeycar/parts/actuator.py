@@ -546,27 +546,28 @@ class RCReceiver:
         :param invert: invert value of run() within [MIN_OUT,MAX_OUT]
         :param jitter: threshold below which no signal is reported
         :param no_action: value within [MIN_OUT,MAX_OUT] if no RC signal is
-                            sent. This is usually zero for throttle and steering
-                            being the center values when the controls are not
-                            pressed.
+                          sent. This is usually zero for throttle and steering
+                          being the center values when the controls are not
+                          pressed.
         """
         import pigpio
         self.pi = pigpio.pi()
         self.gpio = gpio
-        self._high_tick = None
-        self._period = None
-        self._high = None
-        self._min_pwm = 1000
-        self._max_pwm = 2000
-        self._invert = invert
-        self._jitter = jitter
+        self.high_tick = None
+        self.period = None
+        self.high = None
+        self.min_pwm = 1000
+        self.max_pwm = 2000
+        self.invert = invert
+        self.jitter = jitter
         if no_action is not None:
-            self._no_action = no_action
+            self.no_action = no_action
         else:
-            self._no_action = (self.MAX_OUT - self.MIN_OUT) / 2.0
+            self.no_action = (self.MAX_OUT - self.MIN_OUT) / 2.0
 
+        self.factor = (self.MAX_OUT - self.MIN_OUT) / (self.max_pwm - self.min_pwm)
         self.pi.set_mode(self.gpio, pigpio.INPUT)
-        self._cb = self.pi.callback(self.gpio, pigpio.EITHER_EDGE, self._cbf)
+        self.cb = self.pi.callback(self.gpio, pigpio.EITHER_EDGE, self._cbf)
         print('RCReceiver gpio ' + str(gpio) + ' created')
 
     def _update_param(self, tick):
@@ -575,8 +576,8 @@ class RCReceiver:
         :return: difference in ticks
         """
         import pigpio
-        if self._high_tick is not None:
-            t = pigpio.tickDiff(self._high_tick, tick)
+        if self.high_tick is not None:
+            t = pigpio.tickDiff(self.high_tick, tick)
             return t
 
     def _cbf(self, gpio, level, tick):
@@ -588,17 +589,17 @@ class RCReceiver:
         :param tick: # of mu s since boot, 32 bit int
         """
         if level == 1:
-            self._period = self._update_param(tick)
-            self._high_tick = tick
+            self.period = self._update_param(tick)
+            self.high_tick = tick
         elif level == 0:
-            self._high = self._update_param(tick)
+            self.high = self._update_param(tick)
 
     def pulse_width(self):
         """
         :return: the PWM pulse width in microseconds.
         """
-        if self._high is not None:
-            return self._high
+        if self.high is not None:
+            return self.high
         else:
             return 0.0
 
@@ -608,21 +609,25 @@ class RCReceiver:
         [MAX_OUT,MIN_OUT]
         """
         # signal is a value in [0, (MAX_OUT-MIN_OUT)]
-        signal = (self.pulse_width() - self._min_pwm) / (self._max_pwm - self._min_pwm) \
-            * (self.MAX_OUT - self.MIN_OUT)
-        # Assuming non-activity if the pulse is in the middle of [MIN_OUT,MAX_OUT]
-        is_action = abs(signal - self._no_action) > self._jitter
-        if not self._invert:
-            return signal + self.MIN_OUT, is_action
+        signal = (self.pulse_width() - self.min_pwm) * self.factor
+        # Assuming non-activity if the pulse is at no_action point
+        is_action = abs(signal - self.no_action) > self.jitter
+        # if deemed noise assume no signal
+        if not is_action:
+            signal = self.no_action
+        # convert into min max interval
+        if self.invert:
+            signal = -signal + self.MAX_OUT
         else:
-            return -signal + self.MAX_OUT, is_action
+            signal += self.MIN_OUT
+        return signal, is_action
 
     def shutdown(self):
         """
         Donkey parts interface
         """
         import pigpio
-        self._cb.cancel()
+        self.cb.cancel()
 
 
 class MockRCReceiver:
