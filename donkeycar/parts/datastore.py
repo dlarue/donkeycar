@@ -212,6 +212,8 @@ class Tub(object):
         while removed_records < num_records:
             self.remove_record(last_ix - removed_records)
             removed_records += 1
+        print('Removed records {} - {} from tub'
+              .format(last_ix-removed_records+1, last_ix))
 
     def put_record(self, data):
         """
