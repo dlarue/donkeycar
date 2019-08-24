@@ -1,9 +1,13 @@
 import moviepy.editor as mpy
 from tensorflow.python.keras import activations
+from tensorflow.python.keras import backend as K
 
 try:
     from vis.visualization import visualize_saliency, overlay
     from vis.utils import utils
+    from vis.backprop_modifiers import get
+    from vis.losses import ActivationMaximization
+    from vis.optimizer import Optimizer
 except:
     raise Exception("Please install keras-vis: pip install git+https://github.com/autorope/keras-vis.git")
 
@@ -44,6 +48,7 @@ class MakeMovie(object):
                  location or run from dir containing config.py." % conf)
             return
 
+        self.args = args
         self.cfg = dk.load_config(conf)
         self.tub = Tub(args.tub)
         self.index = self.tub.get_index(shuffled=False)
@@ -57,20 +62,25 @@ class MakeMovie(object):
         self.keras_part = None
         self.do_salient = False
         if args.model is not None:
-            self.keras_part = get_model_by_type(args.type, cfg=self.cfg)
-            self.keras_part.load(args.model)
-            self.keras_part.compile()
-            if args.salient:
-                self.do_salient = self.init_salient(self.keras_part.model)
+            self.load_model()
 
         self.use_speed = False
         if hasattr(self.cfg, 'USE_SPEED_FOR_MODEL'):
             self.use_speed = self.cfg.USE_SPEED_FOR_MODEL
 
         print('making movie', args.out, 'from', num_frames, 'images')
+
         clip = mpy.VideoClip(self.make_frame,
                              duration=((num_frames - 1) / self.cfg.DRIVE_LOOP_HZ))
+
         clip.write_videofile(args.out, fps=self.cfg.DRIVE_LOOP_HZ)
+
+    def load_model(self):
+        self.keras_part = get_model_by_type(self.args.type, cfg=self.cfg)
+        self.keras_part.load(self.args.model)
+        self.keras_part.compile()
+        if self.args.salient:
+            self.do_salient = self.init_salient(self.keras_part.model)
 
     def draw_user_input(self, record, img):
         '''
@@ -188,16 +198,26 @@ class MakeMovie(object):
         print("####################")
         print("Visualizing activations on layer:", first_output_name)
         print("####################")
-        
+
         # ensure we have linear activation
         model.layers[self.layer_idx].activation = activations.linear
-        self.sal_model = utils.apply_modifications(model)
+        # build salient model and optimizer
+        sal_model = utils.apply_modifications(model)
+        modifier_fn = get('guided')
+        sal_model_mod = modifier_fn(sal_model)
+        losses = [
+            (ActivationMaximization(sal_model_mod.layers[self.layer_idx], None), -1)
+        ]
+        self.opt = Optimizer(sal_model_mod.input, losses, norm_grads=False)
         return True
 
     def compute_visualisation_mask(self, img):
-        grads = visualize_saliency(self.sal_model, self.layer_idx, filter_indices=None, 
-                                   seed_input=img, backprop_modifier='guided')
-        return grads
+        grad_modifier = 'absolute'
+        grads = self.opt.minimize(seed_input=img, max_iter=1, grad_modifier=grad_modifier, verbose=False)[1]
+        channel_idx = 1 if K.image_data_format() == 'channels_first' else -1
+        grads = np.max(grads, axis=channel_idx)
+        res = utils.normalize(grads)[0]
+        return res
 
     def draw_salient(self, img):
         import cv2
@@ -218,6 +238,7 @@ class MakeMovie(object):
         salient_mask_stacked = np.dstack((z, z))
         salient_mask_stacked = np.dstack((salient_mask_stacked, salient_mask))
         blend = cv2.addWeighted(img.astype('float32'), alpha, salient_mask_stacked, beta, 0.0)
+
         return blend
 
     def make_frame(self, t):
