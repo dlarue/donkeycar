@@ -42,13 +42,11 @@ class MakeMovie(object):
                 parser.print_help()
 
         conf = os.path.expanduser(args.config)
-
         if not os.path.exists(conf):
             print("No config file at location: %s. Add --config to specify\
                  location or run from dir containing config.py." % conf)
             return
 
-        self.args = args
         self.cfg = dk.load_config(conf)
         self.tub = Tub(args.tub)
         self.index = self.tub.get_index(shuffled=False)
@@ -62,25 +60,20 @@ class MakeMovie(object):
         self.keras_part = None
         self.do_salient = False
         if args.model is not None:
-            self.load_model()
+            self.keras_part = get_model_by_type(args.type, cfg=self.cfg)
+            self.keras_part.load(args.model)
+            self.keras_part.compile()
+            if args.salient:
+                self.do_salient = self.init_salient(self.keras_part.model)
 
         self.use_speed = False
         if hasattr(self.cfg, 'USE_SPEED_FOR_MODEL'):
             self.use_speed = self.cfg.USE_SPEED_FOR_MODEL
 
         print('making movie', args.out, 'from', num_frames, 'images')
-
         clip = mpy.VideoClip(self.make_frame,
                              duration=((num_frames - 1) / self.cfg.DRIVE_LOOP_HZ))
-
         clip.write_videofile(args.out, fps=self.cfg.DRIVE_LOOP_HZ)
-
-    def load_model(self):
-        self.keras_part = get_model_by_type(self.args.type, cfg=self.cfg)
-        self.keras_part.load(self.args.model)
-        self.keras_part.compile()
-        if self.args.salient:
-            self.do_salient = self.init_salient(self.keras_part.model)
 
     def draw_user_input(self, record, img):
         '''
@@ -189,7 +182,7 @@ class MakeMovie(object):
         for i, layer in enumerate(model.layers):
             if first_output_name is None and "dropout" not in layer.name.lower() and "out" in layer.name.lower():
                 first_output_name = layer.name
-                self.layer_idx = i
+                layer_idx = i
 
         if first_output_name is None:
             print("Failed to find the model layer named with 'out'. Skipping salient.")
@@ -200,13 +193,13 @@ class MakeMovie(object):
         print("####################")
 
         # ensure we have linear activation
-        model.layers[self.layer_idx].activation = activations.linear
+        model.layers[layer_idx].activation = activations.linear
         # build salient model and optimizer
         sal_model = utils.apply_modifications(model)
         modifier_fn = get('guided')
         sal_model_mod = modifier_fn(sal_model)
         losses = [
-            (ActivationMaximization(sal_model_mod.layers[self.layer_idx], None), -1)
+            (ActivationMaximization(sal_model_mod.layers[layer_idx], None), -1)
         ]
         self.opt = Optimizer(sal_model_mod.input, losses, norm_grads=False)
         return True
@@ -238,7 +231,6 @@ class MakeMovie(object):
         salient_mask_stacked = np.dstack((z, z))
         salient_mask_stacked = np.dstack((salient_mask_stacked, salient_mask))
         blend = cv2.addWeighted(img.astype('float32'), alpha, salient_mask_stacked, beta, 0.0)
-
         return blend
 
     def make_frame(self, t):
