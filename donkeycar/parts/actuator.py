@@ -210,10 +210,10 @@ class PWMThrottle:
 
         # send zero pulse to calibrate ESC
         print("Init ESC")
-        self.controller.set_pulse(self.max_pulse)
-        time.sleep(0.01)
-        self.controller.set_pulse(self.min_pulse)
-        time.sleep(0.01)
+        # self.controller.set_pulse(self.max_pulse)
+        # time.sleep(0.01)
+        # self.controller.set_pulse(self.min_pulse)
+        # time.sleep(0.01)
         self.controller.set_pulse(self.zero_pulse)
         time.sleep(1)
         print('PWM Throttle created')
@@ -230,7 +230,6 @@ class PWMThrottle:
     def shutdown(self):
         # stop vehicle
         self.run(0)
-
 
 
 class Adafruit_DCMotor_Hat:
@@ -273,6 +272,7 @@ class Adafruit_DCMotor_Hat:
 
     def shutdown(self):
         self.mh.getMotor(self.motor_num).run(Adafruit_MotorHAT.RELEASE)
+
 
 class Maestro:
     '''
@@ -699,7 +699,6 @@ class Mini_HBridge_DC_Motor_PWM(object):
         else:
             self.pwm_f.ChangeDutyCycle(0)
             self.pwm_b.ChangeDutyCycle(0)
-
 
     def shutdown(self):
         import RPi.GPIO as GPIO
