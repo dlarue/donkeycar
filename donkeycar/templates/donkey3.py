@@ -6,7 +6,6 @@ controller and to do a calibration of the RC throttle and steering triggers.
 Usage:
     manage.py (drive) [--pid] [--no_cam] [--model=<path_to_pilot>]
     manage.py (calibrate)
-    manage.py (test)
 
 Options:
     -h --help        Show this screen.
@@ -17,11 +16,10 @@ from docopt import docopt
 import donkeycar as dk
 from donkeycar.parts.camera import PiCamera
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle, RCReceiver, ModeSwitch
-from donkeycar.parts.datastore import TubHandler, TubWiper
+from donkeycar.parts.datastore import TubWiper, TubHandler
 from donkeycar.parts.clock import Timestamp
 from donkeycar.parts.transform import PIDController
 from donkeycar.parts.sensor import Odometer
-from donkeycar.parts.datastore import TubHandler
 
 
 class TypePrinter:
@@ -129,7 +127,10 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None):
     donkey_car.add(steering, inputs=[input_field])
 
     # only record if cam is on and no auto-pilot
-    if not no_cam and model_path is None:
+    record_on_ai = cfg.RECORD_DURING_AI if hasattr(cfg, 'RECORD_DURING_AI') \
+                    else False
+
+    if not no_cam and (model_path is None or record_on_ai):
         class RecordingCondition:
             def run(self, throttle_on, throttle_val):
                 return throttle_on and throttle_val > 0
@@ -192,47 +193,6 @@ def calibrate(cfg):
     donkey_car.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
 
 
-def test(cfg):
-    car = dk.vehicle.Vehicle()
-    clock = Timestamp()
-    car.add(clock, outputs=['timestamp'])
-
-    class KeyGen:
-        def __init__(self):
-            self.count = 0
-            self.key = 'a'
-
-        def run(self):
-            if self.count == 5:
-                self.count = 0
-                self.key = 'b' if self.key == 'a' else 'a'
-                print('Hit 5, key =', self.key)
-            self.count += 1
-            return self.key
-
-    car.add(KeyGen(), outputs=['key'])
-
-    class Dispatcher:
-        def run(self, switch):
-            if switch == 'a':
-                return 1
-            elif switch == 'b':
-                return 2
-            else:
-                return 0
-
-    car.add(Dispatcher(), inputs=['key'], outputs=['x'])
-
-    class Print:
-        def run(self, var):
-            print('variable', var)
-
-    car.add(Print(), inputs=['key'])
-    car.add(Print(), inputs=['x'])
-
-    car.start(rate_hz=5, max_loop_count=cfg.MAX_LOOPS)
-
-
 if __name__ == '__main__':
     args = docopt(__doc__)
     config = dk.load_config()
@@ -241,8 +201,7 @@ if __name__ == '__main__':
               model_path=args['--model'])
     elif args['calibrate']:
         calibrate(config)
-    elif args['test']:
-        test(config)
+
 
 
 
