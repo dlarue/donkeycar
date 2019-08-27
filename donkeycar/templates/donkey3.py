@@ -154,7 +154,7 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None):
         donkey_car.add(tub_wipe, inputs=['user/wiper_on'])
 
     # run the vehicle
-    donkey_car.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS, verbose=True)
+    donkey_car.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS, verbose=False)
 
 
 def calibrate(cfg):
