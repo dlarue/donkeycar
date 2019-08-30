@@ -37,8 +37,11 @@ class TFLitePilot(object):
     '''
     def __init__(self):
         self.model = None
- 
-    
+        self.interpreter = None
+        self.input_details = None
+        self.output_details = None
+        self.input_shape = None
+
     def load(self, model_path):
         # Load TFLite model and allocate tensors.
         self.interpreter = tf.lite.Interpreter(model_path=model_path)
@@ -51,7 +54,6 @@ class TFLitePilot(object):
         # Get Input shape
         self.input_shape = self.input_details[0]['shape']
 
-    
     def run(self, image):
         input_data = image.reshape(self.input_shape).astype('float32') 
 
@@ -72,4 +74,10 @@ class TFLitePilot(object):
 
         return steering, throttle
 
+    def get_input_shape(self):
+        assert self.input_shape is not None, "Need to load model first"
+        return tuple(self.input_shape)
+
+    def compile(self):
+        pass
 

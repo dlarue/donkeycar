@@ -561,6 +561,7 @@ class ShowPredictionMetric(BaseCommand):
             bar.next()
 
         bar.finish()
+        model.compile()
         result = model.model.evaluate(x=X,
                                       y=[np.array(angle), np.array(throttle)])
 

@@ -10,16 +10,14 @@ models to help direct the vehicles motion.
 '''
 
 
-
-
-import os
 import numpy as np
 
 from tensorflow import ConfigProto, Session
 from tensorflow.python import keras
+from tensorflow.python.keras import regularizers
 from tensorflow.python.keras.layers import Input, Dense
 from tensorflow.python.keras.models import Model, Sequential
-from tensorflow.python.keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
+from tensorflow.python.keras.layers import Convolution2D, Conv2D, MaxPooling2D, AveragePooling2D, BatchNormalization
 from tensorflow.python.keras.layers import Activation, Dropout, Flatten, Cropping2D, Lambda
 from tensorflow.python.keras.layers.merge import concatenate
 from tensorflow.python.keras.layers import LSTM
@@ -34,6 +32,7 @@ config = ConfigProto()
 config.gpu_options.allow_growth = True
 session = Session(config=config)
 keras.backend.set_session(session)
+
 
 class KerasPilot(object):
     '''
@@ -65,6 +64,10 @@ class KerasPilot(object):
         else:
             raise Exception("unknown optimizer type: %s" % optimizer_type)
 
+    def get_input_shape(self):
+        assert self.model is not None, "Need to load model first"
+        return self.model.inputs[0].shape
+
     def train(self, train_gen, val_gen,
               saved_model_path, epochs=100, steps=100, train_split=0.8,
               verbose=1, min_delta=.0005, patience=15, use_early_stop=True):
@@ -73,14 +76,14 @@ class KerasPilot(object):
 
         """
 
-        #checkpoint to save model after each epoch
+        # checkpoint to save model after each epoch
         save_best = keras.callbacks.ModelCheckpoint(saved_model_path,
                                                     monitor='val_loss',
                                                     verbose=verbose,
                                                     save_best_only=True,
                                                     mode='min')
 
-        #stop training if the validation error stops improving.
+        # stop training if the validation error stops improving.
         early_stop = keras.callbacks.EarlyStopping(monitor='val_loss',
                                                    min_delta=min_delta,
                                                    patience=patience,
@@ -140,7 +143,6 @@ class KerasCategorical(KerasPilot):
         return angle_unbinned, throttle
 
 
-
 class KerasLinear(KerasPilot):
     '''
     The KerasLinear pilot uses one neuron to output a continous value via the
@@ -153,8 +155,7 @@ class KerasLinear(KerasPilot):
         self.compile()
 
     def compile(self):
-        self.model.compile(optimizer=self.optimizer,
-                loss='mse')
+            self.model.compile(optimizer=self.optimizer, loss='mse')
 
     def run(self, img_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
@@ -163,6 +164,20 @@ class KerasLinear(KerasPilot):
         throttle = outputs[1]
         return steering[0][0], throttle[0][0]
 
+
+class KerasSquarePlus(KerasLinear):
+    '''
+    The KerasLinear pilot uses one neuron to output a continous value via the
+    Keras Dense layer with linear activation. One each for steering and throttle.
+    The output is not bounded.
+    '''
+    def __init__(self, input_shape=(120, 160, 3), roi_crop=(0, 0), *args, **kwargs):
+        self.model = default_linear_plus(input_shape, roi_crop)
+        self.compile()
+
+    def compile(self):
+        self.model.compile(optimizer='adam', loss='mse',
+                           loss_weights={'angle_out': 0.9, 'throttle_out': 0.1})
 
 
 class KerasIMU(KerasPilot):
@@ -196,8 +211,7 @@ class KerasIMU(KerasPilot):
         self.compile()
 
     def compile(self):
-        self.model.compile(optimizer=self.optimizer,
-                  loss='mse')
+        self.model.compile(optimizer=self.optimizer, loss='mse')
 
     def run(self, img_arr, accel_x, accel_y, accel_z, gyr_x, gyr_y, gyr_z):
         #TODO: would be nice to take a vector input array.
@@ -220,16 +234,15 @@ class KerasBehavioral(KerasPilot):
         self.compile()
 
     def compile(self):
-        self.model.compile(optimizer=self.optimizer,
-                  loss='mse')
+        self.model.compile(optimizer=self.optimizer, loss='mse')
 
     def run(self, img_arr, state_array):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         bhv_arr = np.array(state_array).reshape(1,len(state_array))
         angle_binned, throttle = self.model.predict([img_arr, bhv_arr])
-        #in order to support older models with linear throttle,
-        #we will test for shape of throttle to see if it's the newer
-        #binned version.
+        # in order to support older models with linear throttle,
+        # we will test for shape of throttle to see if it's the newer
+        # binned version.
         N = len(throttle[0])
 
         if N > 0:
@@ -251,18 +264,15 @@ class KerasLocalizer(KerasPilot):
         self.compile()
 
     def compile(self):
-        self.model.compile(optimizer=self.optimizer, metrics=['acc'],
-                  loss='mse')
+        self.model.compile(optimizer=self.optimizer, metrics=['acc'], loss='mse')
 
     def run(self, img_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         angle_binned, throttle, track_loc = self.model.predict([img_arr])
-        #in order to support older models with linear throttle,
-        #we will test for shape of throttle to see if it's the newer
-        #binned version.
+        # in order to support older models with linear throttle,
+        # we will test for shape of throttle to see if it's the newer
+        # binned version.
         N = len(throttle[0])
-        #print("track_loc", np.argmax(track_loc[0]), track_loc, track_loc.shape)
-        #print("lane", np.argmax(lane[0]), lane, lane.shape)
         loc = np.argmax(track_loc[0])
 
         if N > 0:
@@ -273,6 +283,7 @@ class KerasLocalizer(KerasPilot):
         print("angle_unbinned", angle_unbinned, "throttle", throttle)
 
         return angle_unbinned, throttle, loc
+
 
 def adjust_input_shape(input_shape, roi_crop):
     height = input_shape[0]
@@ -285,7 +296,7 @@ def default_categorical(input_shape=(120, 160, 3), roi_crop=(0, 0)):
     opt = keras.optimizers.Adam()
     drop = 0.2
 
-    #we now expect that cropping done elsewhere. we will adjust our expeected image size here:
+    # we now expect that cropping done elsewhere. we will adjust our expeected image size here:
     input_shape = adjust_input_shape(input_shape, roi_crop)
 
     img_in = Input(shape=input_shape, name='img_in')                      # First layer, input layer, Shape comes from camera.py resolution, RGB
@@ -322,12 +333,10 @@ def default_categorical(input_shape=(120, 160, 3), roi_crop=(0, 0)):
     return model
 
 
-
 def default_n_linear(num_outputs, input_shape=(120, 160, 3), roi_crop=(0, 0)):
 
     drop = 0.1
-
-    #we now expect that cropping done elsewhere. we will adjust our expeected image size here:
+    # we now expect that cropping done elsewhere. we will adjust our expeected image size here:
     input_shape = adjust_input_shape(input_shape, roi_crop)
 
     img_in = Input(shape=input_shape, name='img_in')
@@ -358,6 +367,43 @@ def default_n_linear(num_outputs, input_shape=(120, 160, 3), roi_crop=(0, 0)):
 
     return model
 
+
+def default_linear_plus(input_shape=(120, 160, 3), roi_crop=(0, 0)):
+    drop = 0.1
+    l2 = 0.01
+    input_shape = adjust_input_shape(input_shape, roi_crop)
+    img_in = Input(shape=input_shape, name='img_in')
+    x = img_in
+    # This makes the picture square (assuming 3x4 input) in all following layers
+    x = Conv2D(filters=16, kernel_size=(7, 7), strides=(3, 4), padding='same',
+               activation='relu', name='conv1')(x)
+    x = BatchNormalization(name='batch_norm1')(x)
+    x = AveragePooling2D(pool_size=(2, 2), padding='same', name='pool1')(x)
+    x = Dropout(drop)(x)
+    x = Conv2D(filters=32, kernel_size=(5, 5), strides=(2, 2), padding='same',
+               activation='relu', name='conv2')(x)
+    x = BatchNormalization(name='batch_norm2')(x)
+    x = AveragePooling2D(pool_size=(2, 2), padding='same', name='pool2')(x)
+    x = Dropout(drop)(x)
+    x = Conv2D(filters=64, kernel_size=(3, 3), strides=(2, 2), padding='same',
+               activation='relu', name='conv3')(x)
+    x = BatchNormalization(name='batch_norm3')(x)
+    # x = AveragePooling2D(pool_size=(2, 2), padding='same', name='pool3')(x)
+    x = Dropout(drop)(x)
+    x = Conv2D(filters=96, kernel_size=(3, 3), strides=(1, 1), padding='same',
+               activation='relu', name='conv4')(x)
+    x = BatchNormalization(name='batch_norm4')(x)
+    x = AveragePooling2D(pool_size=(2, 2), padding='same', name='pool4')(x)
+    x = Flatten(name='flattened')(x)
+    x = Dense(units=96, activation='linear',
+              kernel_regularizer=regularizers.l2(l2))(x)
+    x = Dense(units=48, activation='linear',
+              kernel_regularizer=regularizers.l2(l2))(x)
+
+    angle_out = Dense(units=1, activation='linear', name='angle_out')(x)
+    throttle_out = Dense(units=1, activation='linear', name='throttle_out')(x)
+    model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
+    return model
 
 
 def default_imu(num_outputs, num_imu_inputs, input_shape):
@@ -502,8 +548,7 @@ class KerasRNN_LSTM(KerasPilot):
         self.optimizer = "rmsprop"
 
     def compile(self):
-        self.model.compile(optimizer=self.optimizer,
-                  loss='mse')
+        self.model.compile(optimizer=self.optimizer, loss='mse')
 
     def run(self, img_arr):
         if img_arr.shape[2] == 3 and self.image_d == 1:
@@ -657,6 +702,7 @@ def build_3d_cnn(w, h, d, s, num_outputs):
     #model.add(Activation('tanh'))
 
     return model
+
 
 class KerasLatent(KerasPilot):
     def __init__(self, num_outputs=2, input_shape=(120, 160, 3), *args, **kwargs):

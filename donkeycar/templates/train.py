@@ -70,7 +70,7 @@ def collate_records(records, gen_records, opts):
     add them to a list of gen_records, passed in.
     use the opts dict to specify config choices
     '''
-
+    print('collating %d records ...' % (len(records)))
     throttle_key = 'user/throttle'
     if hasattr(opts['cfg'], 'USE_SPEED_FOR_MODEL') and opts['cfg'].USE_SPEED_FOR_MODEL:
         throttle_key = 'car/speed'
@@ -323,7 +323,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
         print('loading weights from model', transfer_model)
         kl.load(transfer_model)
 
-        #when transfering models, should we freeze all but the last N layers?
+        # when transfering models, should we freeze all but the last N layers?
         if cfg.FREEZE_LAYERS:
             num_to_freeze = len(kl.model.layers) - cfg.NUM_LAST_LAYERS_TO_TRAIN
             print('freezing %d layers' % num_to_freeze)
@@ -345,7 +345,6 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
     extract_data_from_pickles(cfg, tub_names)
 
     records = gather_records(cfg, tub_names, opts, verbose=True)
-    print('collating %d records ...' % (len(records)))
     collate_records(records, gen_records, opts)
 
     def generator(save_best, opts, data, batch_size, is_train_set=True,

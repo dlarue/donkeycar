@@ -15,6 +15,8 @@ import subprocess
 import math
 import random
 import time
+import signal
+
 
 from PIL import Image
 import numpy as np
@@ -22,6 +24,7 @@ import numpy as np
 '''
 IMAGES
 '''
+
 
 def scale(im, size=128):
     '''
@@ -63,6 +66,7 @@ def arr_to_img(arr):
     arr = np.uint8(arr)
     img = Image.fromarray(arr)
     return img
+
 
 def img_to_arr(img):
     '''
@@ -124,6 +128,7 @@ def img_crop(img_arr, top, bottom):
         end = -bottom
     return img_arr[top:end, ...]
 
+
 def normalize_and_crop(img_arr, cfg):
     img_arr = img_arr.astype(np.float32) / 255.0
     if cfg.ROI_CROP_TOP or cfg.ROI_CROP_BOTTOM:
@@ -157,7 +162,6 @@ def load_scaled_image_arr(filename, cfg):
         img_arr = None
     return img_arr
 
-        
 
 '''
 FILES
@@ -196,11 +200,11 @@ def zip_dir(dir_path, zip_path):
 
 
 
-
 '''
 BINNING
 functions to help converte between floating point numbers and categories.
 '''
+
 
 def clamp(n, min, max):
     if n < min:
@@ -208,6 +212,7 @@ def clamp(n, min, max):
     if n > max:
         return max
     return n
+
 
 def linear_bin(a, N=15, offset=1, R=2.0):
     '''
@@ -249,6 +254,8 @@ def map_range(x, X_min, X_max, Y_min, Y_max):
 '''
 ANGLES
 '''
+
+
 def norm_deg(theta):
     while theta > 360:
         theta -= 360
@@ -256,7 +263,9 @@ def norm_deg(theta):
         theta += 360
     return theta
 
+
 DEG_TO_RAD = math.pi / 180.0
+
 
 def deg2rad(theta):
     return theta * DEG_TO_RAD
@@ -264,6 +273,8 @@ def deg2rad(theta):
 '''
 VECTORS
 '''
+
+
 def dist(x1, y1, x2, y2):
     return math.sqrt(math.pow(x2 - x1, 2) + math.pow(y2 - y1, 2))
 
@@ -278,11 +289,11 @@ def my_ip():
     return s.getsockname()[0]
 
 
-
-
 '''
 OTHER
 '''
+
+
 def merge_two_dicts(x, y):
     """Given two dicts, merge them into a new dict as a shallow copy."""
     z = x.copy()
@@ -317,19 +328,10 @@ def run_shell_command(cmd, cwd=None, timeout=15):
         err.append(line)
     return out, err, proc.pid
 
-'''
-def kill(proc_pid):
-    process = psutil.Process(proc_pid)
-    for proc in process.children(recursive=True):
-        proc.kill()
-    process.kill()
-'''
-import signal
+
 
 def kill(proc_id):
     os.kill(proc_id, signal.SIGINT)
-
-
 
 
 def eprint(*args, **kwargs):
@@ -339,6 +341,7 @@ def eprint(*args, **kwargs):
 """
 Tub management
 """
+
 
 def expand_path_masks(paths):
     '''
@@ -402,10 +405,9 @@ def get_record_index(fnm):
     sl = os.path.basename(fnm).split('_')
     return int(sl[1].split('.')[0])
 
+
 def gather_records(cfg, tub_names, opts=None, verbose=False):
-
     tubs = gather_tubs(cfg, tub_names)
-
     records = []
 
     for tub in tubs:
@@ -416,12 +418,15 @@ def gather_records(cfg, tub_names, opts=None, verbose=False):
 
     return records
 
+
 def get_model_by_type(model_type, cfg):
     '''
     given the string model_type and the configuration settings in cfg
     create a Keras model and return it.
     '''
-    from donkeycar.parts.keras import KerasRNN_LSTM, KerasBehavioral, KerasCategorical, KerasIMU, KerasLinear, Keras3D_CNN, KerasLocalizer, KerasLatent
+    from donkeycar.parts.keras import KerasRNN_LSTM, KerasBehavioral, \
+        KerasCategorical, KerasIMU, KerasLinear, KerasSquarePlus, Keras3D_CNN, \
+        KerasLocalizer, KerasLatent
     from donkeycar.parts.tflite import TFLitePilot
  
     if model_type is None:
@@ -441,6 +446,8 @@ def get_model_by_type(model_type, cfg):
         kl = KerasIMU(num_outputs=2, num_imu_inputs=6, input_shape=input_shape)        
     elif model_type == "linear":
         kl = KerasLinear(input_shape=input_shape, roi_crop=roi_crop)
+    elif model_type == "square_plus":
+        kl = KerasSquarePlus(input_shape=input_shape, roi_crop=roi_crop)
     elif model_type == "tensorrt_linear":
         # Aggressively lazy load this. This module imports pycuda.autoinit which causes a lot of unexpected things
         # to happen when using TF-GPU for training.
@@ -465,6 +472,7 @@ def get_model_by_type(model_type, cfg):
 
     return kl
 
+
 def get_test_img(model):
     '''
     query the input to see what it likes
@@ -477,7 +485,7 @@ def get_test_img(model):
     except Exception as e:
         count, seq_len, h, w, ch = model.inputs[0].get_shape()
 
-    #generate random array in the right shape
+    # generate random array in the right shape
     img = np.random.rand(int(h), int(w), int(ch))
 
     return img
@@ -490,12 +498,9 @@ def train_test_split(data_list, shuffle=True, test_size=0.2):
     use the test_size to choose the split percent.
     shuffle is always True, left there to be backwards compatible
     '''
-    assert(shuffle==True)
-    
+    assert shuffle
     train_data = []
-
     target_train_size = len(data_list) * (1. - test_size)
-
     i_sample = 0
 
     while i_sample < target_train_size and len(data_list) > 1:
@@ -503,16 +508,16 @@ def train_test_split(data_list, shuffle=True, test_size=0.2):
         train_data.append(data_list.pop(i_choice))
         i_sample += 1
 
-    #remainder of the original list is the validation set
+    # remainder of the original list is the validation set
     val_data = data_list
 
     return train_data, val_data
     
 
-
 """
 Timers
 """
+
 
 class FPSTimer(object):
     def __init__(self):
