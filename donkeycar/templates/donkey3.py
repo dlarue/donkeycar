@@ -21,6 +21,8 @@ from donkeycar.parts.clock import Timestamp
 from donkeycar.parts.transform import PIDController
 from donkeycar.parts.sensor import Odometer
 
+from donkeycar.utils import normalize_and_crop
+
 
 class TypePrinter:
     def __init__(self, type_name):
@@ -43,25 +45,25 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None):
     if no_cam:
         assert model_path is None, "Can't drive with pilot but w/o camera"
 
-    donkey_car = dk.vehicle.Vehicle()
+    car = dk.vehicle.Vehicle()
 
     clock = Timestamp()
-    donkey_car.add(clock, outputs=['timestamp'])
+    car.add(clock, outputs=['timestamp'])
 
     if not no_cam:
         cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
-        donkey_car.add(cam, outputs=['cam/image_array'], threaded=True)
+        car.add(cam, outputs=['cam/image_array'], threaded=True)
 
     odo = Odometer()
-    donkey_car.add(odo, outputs=['car/speed'])
+    car.add(odo, outputs=['car/speed'])
 
     # create the RC receiver with 3 channels
     rc_steering = RCReceiver(cfg.STEERING_RC_GPIO, invert=True)
     rc_throttle = RCReceiver(cfg.THROTTLE_RC_GPIO)
     rc_wiper = RCReceiver(cfg.DATA_WIPER_RC_GPIO, jitter=0.05, no_action=0)
-    donkey_car.add(rc_steering, outputs=['user/angle', 'user/steering_on'])
-    donkey_car.add(rc_throttle, outputs=['user/throttle', 'user/throttle_on'])
-    donkey_car.add(rc_wiper, outputs=['user/wiper', 'user/wiper_on'])
+    car.add(rc_steering, outputs=['user/angle', 'user/steering_on'])
+    car.add(rc_throttle, outputs=['user/throttle', 'user/throttle_on'])
+    car.add(rc_wiper, outputs=['user/wiper', 'user/wiper_on'])
 
     # if pid we want to convert throttle to speed
     if use_pid:
@@ -69,17 +71,28 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None):
             def run(self, controller_input):
                 return controller_input * cfg.MAX_SPEED
 
-        donkey_car.add(Rescaler(), inputs=['user/throttle'], outputs=['user/speed'])
+        car.add(Rescaler(), inputs=['user/throttle'], outputs=['user/speed'])
 
     # load model if present
     if model_path is not None:
         print("Using auto-pilot")
         kl = dk.utils.get_model_by_type('linear', cfg)
         kl.load(model_path)
+
+        class ImgPrecondition:
+            def __init__(self, cfg):
+                self.cfg = cfg
+
+            def run(self, img_arr):
+                return normalize_and_crop(img_arr, self.cfg)
+
+        car.add(ImgPrecondition(cfg), inputs=['cam/image_array'],
+                outputs=['cam/normalized/cropped'])
+
         outputs = ['pilot/angle', 'pilot/speed' if use_pid else 'pilot/throttle']
-        donkey_car.add(kl, inputs=['cam/image_array'], outputs=outputs)
+        car.add(kl, inputs=['cam/normalized/cropped'], outputs=outputs)
         mode_switch = ModeSwitch(num_modes=2)
-        donkey_car.add(mode_switch, inputs=['user/wiper_on'], outputs=['user/mode'])
+        car.add(mode_switch, inputs=['user/wiper_on'], outputs=['user/mode'])
 
         # This part dispatches between user or ai depending on the switch state
         class PilotCondition:
@@ -88,25 +101,26 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None):
                     return user_var
                 else:
                     return pilot_var
+
         # switch between user or pilot speed (if pid) or throttle (if no pid)
         var = 'speed' if use_pid else 'throttle'
-        donkey_car.add(PilotCondition(),
-                       inputs=['user/mode', 'user/' + var, 'pilot/' + var],
-                       outputs=[var])
+        car.add(PilotCondition(),
+                inputs=['user/mode', 'user/' + var, 'pilot/' + var],
+                outputs=[var])
 
     # drive by pid w/ speed
     if use_pid:
-
         class PidError:
             def run(self, car_speed, user_speed):
                 return car_speed - user_speed
+
         # use pid either for rc control output or for ai output
         inputs = ['car/speed', 'speed' if model_path is not None else 'user/speed']
-        donkey_car.add(PidError(), inputs=inputs, outputs=['pid/error'])
+        car.add(PidError(), inputs=inputs, outputs=['pid/error'])
 
         # add pid controller to convert throttle value into speed
         pid = PIDController(p=cfg.PID_P, i=cfg.PID_I, d=cfg.PID_D, debug=False)
-        donkey_car.add(pid, inputs=['pid/error'], outputs=['throttle'])
+        car.add(pid, inputs=['pid/error'], outputs=['throttle'])
 
     # create the PWM throttle controller for esc
     throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL)
@@ -116,7 +130,7 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None):
                            min_pulse=cfg.THROTTLE_REVERSE_PWM)
     # feed signal which is either rc (user) or ai
     input_field = 'user/throttle' if not use_pid and model_path is None else 'throttle'
-    donkey_car.add(throttle, inputs=[input_field])
+    car.add(throttle, inputs=[input_field])
     # create the PWM steering controller
     steering_controller = PCA9685(cfg.STEERING_CHANNEL)
     steering = PWMSteering(controller=steering_controller,
@@ -124,20 +138,20 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None):
                            right_pulse=cfg.STEERING_RIGHT_PWM)
     # feed signal which is either rc (user) or ai
     input_field = 'user/angle' if model_path is None else 'pilot/angle'
-    donkey_car.add(steering, inputs=[input_field])
+    car.add(steering, inputs=[input_field])
 
     # only record if cam is on and no auto-pilot
     record_on_ai = cfg.RECORD_DURING_AI if hasattr(cfg, 'RECORD_DURING_AI') \
-                    else False
+        else False
 
     if not no_cam and (model_path is None or record_on_ai):
         class RecordingCondition:
             def run(self, throttle_on, throttle_val):
                 return throttle_on and throttle_val > 0
 
-        donkey_car.add(RecordingCondition(),
-                       inputs=['user/throttle_on', 'user/throttle'],
-                       outputs=['user/recording'])
+        car.add(RecordingCondition(),
+                inputs=['user/throttle_on', 'user/throttle'],
+                outputs=['user/recording'])
 
         # add tub to save data
         inputs = ['cam/image_array', 'user/angle', 'user/throttle',
@@ -146,15 +160,15 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None):
         # multiple tubs
         tub_hand = TubHandler(path=cfg.DATA_PATH)
         tub = tub_hand.new_tub_writer(inputs=inputs, types=types, allow_reverse=False)
-        donkey_car.add(tub, inputs=inputs, outputs=["tub/num_records"],
-                       run_condition='user/recording')
+        car.add(tub, inputs=inputs, outputs=["tub/num_records"],
+                run_condition='user/recording')
 
         # add a tub wiper that is triggered by channel 3 on the RC
         tub_wipe = TubWiper(tub, num_records=20)
-        donkey_car.add(tub_wipe, inputs=['user/wiper_on'])
+        car.add(tub_wipe, inputs=['user/wiper_on'])
 
     # run the vehicle
-    donkey_car.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS, verbose=False)
+    car.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS, verbose=False)
 
 
 def calibrate(cfg):
@@ -185,6 +199,7 @@ def calibrate(cfg):
             print('angle=%+5.4f, steering_on=%1d, throttle=%+5.4f, '
                   'throttle_on=%1d wiper=%+5.4f, wiper_on=%1d' %
                   (angle, steering_on, throttle, throttle_on, wiper, wiper_on))
+
     # add plotter part
     donkey_car.add(Plotter(), inputs=['user/angle', 'user/steering_on',
                                       'user/throttle', 'user/throttle_on',
@@ -201,8 +216,3 @@ if __name__ == '__main__':
               model_path=args['--model'])
     elif args['calibrate']:
         calibrate(config)
-
-
-
-
-
