@@ -56,5 +56,19 @@ The electronic carrier was modelled in Fusion360, using CAD drawings for the RPi
 For the assembly I use 3mm hex cap head (i.e Allen) screws and beer. The screws are small and fiddly, so you need to be relaxed during assembly. I have a whole box in all lenghts between 6mm and 40mm.
 ![screws](./assets/screws.jpeg)
 
+Mounting the camera holder with its angle bracket to the base plate.
+![base+cam](./assets/base+cam.jpeg)
+
+Mounting the on/off switch and connecting to terminals.
+![switch](./assets/switch.jpeg)
+
+This is the angle bracket with the switch and the small push button installed. The latter allows to shut-down the RPi through setting a specifc pin to ground. Please see [Andreas](http://www.sensorsiot.org/raspberry-pi-tricks/) page.
+![panel](./assets/panel.jpeg)
+
+To mount the ESC to the base plate I 3D printed as small holder with 2 holes for the screws.
+![esc-holder](./assets/esc-holder.jpeg)
+
+This is how it looks with the whole electronics mounted on the rear of the base plate.
+![esc-mounted](./assets/esc-mounted.jpeg)
 
 
