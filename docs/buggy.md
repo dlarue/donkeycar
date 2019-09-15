@@ -24,6 +24,18 @@ When I first got the motor and hooked it up to the original car's ESC I found it
 ![45 Amp ESC](./assets/esc-45amp.jpg)
 
 ## The build
-In order to fit the motor into the original mounting bracket there is some filing or drilling required as the motor mount hole pattern of the larger SK3 motor does not fit the original holes. Here is a picture with only the chassis of the car with the motor mounted.
+### The chassis
+In order to fit the motor into the original mounting bracket there is some filing or drilling required as the motor mount hole pattern of the larger SK3 motor does not fit the original holes. Here is a picture with only the chassis of the car with the motor mounted (wheels look like they are not parallel but this is somehow due to the iPhone picture optics...)
 
+![Chassis](./assets/chassis-1.jpeg)
+
+Here is the motor as seen from the side. In the background is my odometer disc that is mounted on the drive shaft.
+![Motor mounted](./assets/motor-1.jpeg)
+
+This is the steering servo. I had to replace it after the original servo broke. 
+![Steering servo](./assets/front-servo.jpeg)
+
+### The base
+I decided to create a fixed base plate that is mounted to the chassis with strong joints. I also wanted a camera holder to be fixed to the frame but with the option to remove the camera from it or to remove the electronics without much hassle. Therefore I created a base plate and camera holder from 1mm sheet metal (mild steel) and a 3D-printed electronics carrier plate. The camera also has a 3D-printed case that is fixed to the holder with screws. Here is the parts:
+  
 
