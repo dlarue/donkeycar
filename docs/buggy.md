@@ -35,7 +35,26 @@ Here is the motor as seen from the side. In the background is my odometer disc t
 This is the steering servo. I had to replace it after the original servo broke. 
 ![Steering servo](./assets/front-servo.jpeg)
 
+My donkey car has been involved in many crashless - mostly due reckless driving when on its own, ignoring physical obstacles and doing all kind of stubborn juvenile behaviour. Some hard crash broke the front suspension unit that I replaced w/ an upgraded metal suspension one. But long story short, donkey needs a front bumper to protect him from himself, so I made a 3D printed part (actually I made 2 parts, the first one not strong enough as donkey broke that one almost immediately, too).
+![bumper1](./assets/bumper-1.jpeg)
+Here is where the bumper is fixed on the upper end.
+![bumper2](./assets/bumper-2.jpeg)
+
 ### The base
-I decided to create a fixed base plate that is mounted to the chassis with strong joints. I also wanted a camera holder to be fixed to the frame but with the option to remove the camera from it or to remove the electronics without much hassle. Therefore I created a base plate and camera holder from 1mm sheet metal (mild steel) and a 3D-printed electronics carrier plate. The camera also has a 3D-printed case that is fixed to the holder with screws. Here is the parts:
-  
+I decided to create a fixed base plate that is mounted to the chassis with strong joints. I also wanted a camera holder to be fixed to the frame but with the option to remove the camera from it or to remove the electronics without much hassle. Therefore I created a base plate and camera holder from 1mm sheet metal (mild steel) and a 3D-printed electronics carrier plate. The camera also has a 3D-printed case that is fixed to the holder with screws. Here are the parts:
+![all-parts](./assets/all-parts.jpeg)
+
+The base plate requires some amount of drilling hols for screws and cable openings. Here I already installed a rear aluminium angle bar for mounting the main switch and shut-down push button and screw terminals for the power distribution.
+![base](./assets/base.jpeg)
+
+This is the camera holder with a right angle slotted plate, to feed the camera cable into the housing.
+![cam-holder](./assets/cam-holder.jpeg)
+
+The electronic carrier was modelled in Fusion360, using CAD drawings for the RPi and the PCA9685 for mounting studs. It also takes the RC receiver with a push fit and a 3 Amp voltage step dow converter (push fit plus a small bit of hot glue).
+![elec-carrier](./assets/elec-carrier.jpeg)
+
+For the assembly I use 3mm hex cap head (i.e Allen) screws and beer. The screws are small and fiddly, so you need to be relaxed during assembly. I have a whole box in all lenghts between 6mm and 40mm.
+![screws](./assets/screws.jpeg)
+
+
 
