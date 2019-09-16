@@ -53,7 +53,7 @@ This is the camera holder with a right angle slotted plate, to feed the camera c
 The electronic carrier was modelled in Fusion360, using CAD drawings for the RPi and the PCA9685 for mounting studs. It also takes the RC receiver with a push fit and a 3 Amp voltage step dow converter (push fit plus a small bit of hot glue).
 ![elec-carrier](./assets/elec-carrier.jpeg)
 
-For the assembly I use 3mm hex cap head (i.e Allen) screws and beer. The screws are small and fiddly, so you need to be relaxed during assembly. I have a whole box in all lenghts between 6mm and 40mm.
+For the assembly I use 3mm hex cap head (i.e Allen) screws and beer. Washers and nuts are small and fiddly they fall down and disappear into hidden spaces, to keep your cool you use the beer. I have a whole box in all lenghts between 6mm and 40mm.
 ![screws](./assets/screws.jpeg)
 
 Mounting the camera holder with its angle bracket to the base plate.
@@ -62,13 +62,23 @@ Mounting the camera holder with its angle bracket to the base plate.
 Mounting the on/off switch and connecting to terminals.
 ![switch](./assets/switch.jpeg)
 
-This is the angle bracket with the switch and the small push button installed. The latter allows to shut-down the RPi through setting a specifc pin to ground. Please see [Andreas](http://www.sensorsiot.org/raspberry-pi-tricks/) page.
+This is the angle bracket with the switch and the small push button installed. The latter allows to shut-down the RPi through setting a specifc pin to ground. Please see Andrea [raspberry-pi-tricks](http://www.sensorsiot.org/raspberry-pi-tricks/) page.
 ![panel](./assets/panel.jpeg)
 
 To mount the ESC to the base plate I 3D printed as small holder with 2 holes for the screws.
 ![esc-holder](./assets/esc-holder.jpeg)
 
-This is how it looks with the whole electronics mounted on the rear of the base plate.
+This is how it looks with all the electronics mounted on the rear of the base plate.
 ![esc-mounted](./assets/esc-mounted.jpeg)
+
+### The camera assembly
+Here is a view of the camera case. The case is a 3D design where I modelled up the camera and used it as a tool to cut out the shape from a rectangular case. It mounts flush to the holder which has a hole for the lense.
+![cam-case](./assets/cam-case.jpeg)
+
+The holder assembled to the base plate and with the angular bracket attached which serves as a base for cover that is added later in the build. It also has a slot to pass through the camera ribbon cable.
+![cam-holder](./assets/cam-holder.jpeg)
+
+I made a small grommit to create a tight fit around the cable.
+![cam-grommit](./assets/cam-grommit.jpeg)
 
 
