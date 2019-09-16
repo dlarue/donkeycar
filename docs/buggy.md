@@ -81,4 +81,25 @@ The holder assembled to the base plate and with the angular bracket attached whi
 I made a small grommit to create a tight fit around the cable.
 ![cam-grommit](./assets/cam-grommit.jpeg)
 
+### The electronics
+Firstly I fitted the RC receiver into the push fit bracket on the carrier.
+![rc-1](./assets/rc-1.jpeg)
+This is a tight fit and will not shake loose. There is no glue or anything required. In the CAD design I made the cutout in the bracket 0.2mm larger than the measured dimension of the receiver. This required a small bit of filing. Likely 0.4mm would have worked, too.
+![rc-2](./assets/rc-2.jpeg)
+Next was the PCA 9685 PWM driver board which just needs pushing onto the studs. The fit is really tight too and no further fasteners are needed. Top view here...
+![pca9685-1](./assets/pca9685-1.jpeg)
+... and side view, here:
+![pca9685-2](./assets/pca9685-2.jpeg)
+
+Afterwards attaching the RPi to the carrier plate with screws. My intention was to use the same printed studs like for the PWM driver pcb but it turned out that Cura (my 3D printer software) had decided to make the base columns of the RPi studs hollow which resulted in the top parts to brake off. So I scrwed in the RPi with 4 2.5mm mini Philips plastic screws.
+
+Here is a view of the RPi attached:
+![elec-all-1](./assets/elec-all-1.jpeg)
+
+This is the whole base plate of the car. Also the voltage converter is attached now. The fit is not tight enough to hold that mini pcb inside the cutout area. I therefore put a small bit of hot glue in between.
+![elec-all-2](./assets/elec-all-2.jpeg)
+
+This is the whole car from the top. There is obviously not much space left. Making the base plate larger is also not an option as it would start fouling one of the tires if the suspension gets fully compressed.
+![elec-all-3](./assets/elec-all-3.jpeg)
+
 
