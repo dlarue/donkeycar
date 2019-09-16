@@ -144,7 +144,7 @@ The front of the donkey car has a small cutout to supply the RPi with external p
 The rear of the donkey car. Obviously I couldn't wait to try out the car hence it is already dirty. Here the cover is attached to the rear suspension tower with an m4 screw, just screwd into a spacer block that sticks out on the rear of the cover.
 ![back](./assets/back.jpeg)
 
-With the cover on, there is no way any dirt or water can get into the electronics an it keeps them reasonably shielded from all outer impacts. All in all the whole construction now also feels rigid enough for hopefully many rounds of fast and out-of-control driving.
+With the cover on, there is no way any dirt or water can get into the electronics and it keeps them reasonably shielded from physcial impacts. All in all the whole construction now also feels rigid enough for hopefully many rounds of _fast_ and _out-of-control_ driving.
 
 ### To do
 1. Obviously when running an outrunner motor there is no need to use an odometer on the drive shaft any longer that has a disk with embedded neodym magnets. You get a much higher angular resolution when placing the hall sensor (I am using a bipolar latching SS460S) directly next to the rotating can of the motor. I will do this at some point.
