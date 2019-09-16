@@ -5,13 +5,15 @@ reasonable price. The car can be bought from [HobbyKing](https://hobbyking.com/e
 
 ![4WD_Buggy](./assets/4WD_buggy.jpg)
 
-I bought the buggy to build my donkey car on it. This is not as straight forward as building the _standard_ Exceed or Magnet:
+I bought the buggy to build my donkey car on it. When I started with the donkey project the standard cars were not easily available in Europe. Using this buggy is for sure not as straight forward as building the _standard_ Exceed or Magnet:
 * the car needs some modifications in order to be usable as a donkey car
 * the modifications are an additional investment (probably more in time than in $)
 * for that work you need to be happy to do some mechanical work, like drilling, using a file if you use metal, etc
-* for making things neat and fitting, it's very handy to have access to a 3D printer
+* for making things neat and fitting well, it's very handy to have access to a 3D printer and use some CAD software (I'm using Fusion360). 
 
-I am not familiar with the Exceed or Magnet car, but judging the pictures and the specs, I think that the Turnigy buggy is at least as good as the standard cars. Doing that build has been an interesting experience and I made many mistakes and took different approaches. Finally, I think I have now converged towards a good vehicle with high quality driving behaviour and a very robust architecture, so I'll share my build here. 
+I am not familiar with the Exceed or Magnet car, but judging the pictures and the specs, I think that the Turnigy buggy is at least as good as the standard cars. Doing that build has been an interesting experience during which I took several detours and  made many mistakes. I could say I spent a good amount of effort in R&D but it was more like T&E (trial & error). Finally, I think I have now converged towards a good vehicle with high quality driving behaviour and a very robust architecture, so I'll share my build here. If you start a non-standard _roll-your-own_ build with another similar sized car, ie. 1/18 to 1/14 scale, the parts and approach below might work for you too. 
+
+As I am driving the car mainly outside my goal was to build a robust car that does not disintegrate when hitting a stone or similar obstacle. Also I want to avoid dirt and/or water getting too close to the electronics.
 
 ## Parts to chuck out
 The buggy comes with a small ESC and quite powerful brushless motor. According the specs it is supposed to run up to 25mph. This is probably great for racing around in the backyard but not so suitable for running donkey on it as you will require good control at low speeds. I tried a couple of laps in the garden before I started the donkey car build and it was fun to drive but hard to control (as I am no RC driver). It was also quite noisy, and the motor as well as the ESC reached high temperatures in action.
@@ -22,6 +24,8 @@ For the motor I settled with the Turnigy SK3 2836 1040 from [HobbyKing](https://
 
 When I first got the motor and hooked it up to the original car's ESC I found it was not suitable either, as it required some throttle to get started and could not run on low speeds. Although the high speed was less than the original car in-runner motor. After reading that non-sensored brushless motors would not have enough passive control through a standard sensorless ESC I initially gave up on the plan to use that motor and went with a brushed motor/ESC combination instead initially. However, I found that after changing the ESC I could run the motor very well at low speeds in a very controllable way. I am using a very cheap ESC from [Ebay](https://www.ebay.co.uk/itm/45-120A-ESC-Sensored-Brushless-Speed-Controller-for-RC-1-8-1-10-Car-Crawler/123836633866?ssPageName=STRK%3AMEBIDX%3AIT&var=424542043077&_trksid=p2057872.m2749.l2649). It turns out that this works brilliantly in the combination with the SK3 outrunner motor.
 ![45 Amp ESC](./assets/esc-45amp.jpg)
+
+So far it looks like that the motor and the ESC are not developing any heat even when going at full throttle.
 
 ## The build
 ### The chassis
@@ -93,7 +97,7 @@ Next was the PCA 9685 PWM driver board which just needs pushing onto the studs. 
 
 Afterwards attaching the RPi to the carrier plate with screws. My intention was to use the same printed studs like for the PWM driver pcb but it turned out that Cura (my 3D printer software) had decided to make the base columns of the RPi studs hollow which resulted in the top parts to brake off. So I scrwed in the RPi with 4 2.5mm mini Philips plastic screws.
 
-Here is a view of the RPi attached:
+Here is a view of the RPi attached and the carrier already provisionally moved into place.
 ![elec-all-1](./assets/elec-all-1.jpeg)
 
 This is the whole base plate of the car. Also the voltage converter is attached now. The fit is not tight enough to hold that mini pcb inside the cutout area. I therefore put a small bit of hot glue in between.
@@ -102,4 +106,51 @@ This is the whole base plate of the car. Also the voltage converter is attached 
 This is the whole car from the top. There is obviously not much space left. Making the base plate larger is also not an option as it would start fouling one of the tires if the suspension gets fully compressed.
 ![elec-all-3](./assets/elec-all-3.jpeg)
 
+### Fixing and cables
+There is whole for the power supply cables to the battert (in my case XT-60) plug.
+![power-cable](./assets/power-cable.jpeg)
 
+Now I fixed the electronics carrier with 2 screws to the base plate:
+![carrier-fix-1](./assets/carrier-fix-1.jpeg)
+
+![carrier-fix-2](./assets/carrier-fix-2.jpeg)
+
+In the end I connected all cables:
+* Battery+ to the voltage converter input
+* Voltage converter output to RPi 5V input
+* Battery- to RPi Gnd
+* RPi +3.3V, Gnd, I2C SCL and SDA to PCA9685
+* RPi +3.3V, Gnd and 3 channels to the RC receiver
+* RPi +3.3V, Gnd and 1 channel to the odometer
+As you are probably aware that the RPi has only 2 +3.3V pins - instead of making a Y-cable or adding a +3.3V power terminal, I just soldered the second row of pins to the PCA9685 and used +3.3V and Gnd from there.
+
+![elec-cables](./assets/elec-cables.jpeg)
+
+For the ESC switch and the 2 capacitors I didn't have any space. I might create some bracket/holder for them in the future but for now I just put them into the rear area. With so many cables around they can't get very far anyway. I also joined some cables with wires to tidy up the cable mess a little more.
+
+### The cover
+For the cover I 3D-printed a 2.4mm thick half case that fits the dimensions of the base, camera holder and rear angle bracket exactly. Again I used the technique to model up the internal parts of the base plate in one component first and then create a second component aroudn the first one making use of the useful feature 'Project Geometry' in Fusion360. I also printed upside down and avoided any overhanging parts with < 45 degree, so no support was needed. 
+![cover](./assets/cover.jpeg)
+
+The cover sits on the front angle bracket of the camera holder into which put a 3mm screw with a hex nut. There is a corresponding cut out in the cover so it fits exactly over it and I bolted it down with a small piece of sheet metal to spread the load. 
+![top](./assets/top.jpeg)
+
+This is the rear cutout area where the switch and push button are accessible.
+![cutout](./assets/cutout.jpeg)
+
+The front of the donkey car has a small cutout to supply the RPi with external power if needed.
+![front](./assets/front.jpeg)
+
+The rear of the donkey car. Obviously I couldn't wait to try out the car hence it is already dirty. Here the cover is attached to the rear suspension tower with an m4 screw, just screwd into a spacer block that sticks out on the rear of the cover.
+![back](./assets/back.jpeg)
+
+With the cover on, there is no way any dirt or water can get into the electronics an it keeps them reasonably shielded from all outer impacts. All in all the whole construction now also feels rigid enough for hopefully many rounds of fast and out-of-control driving.
+
+### To do
+1. Obviously when running an outrunner motor there is no need to use an odometer on the drive shaft any longer that has a disk with embedded neodym magnets. You get a much higher angular resolution when placing the hall sensor (I am using a bipolar latching SS460S) directly next to the rotating can of the motor. I will do this at some point.
+
+1. The ESC and the motor are both specified for 3S so I could run the car at more power. Will try.
+
+1. The spur gear is made of plastic and I chewed through already 2 of those. I had ordered a metal one from Ebay some months ago but it never showed up. I believe I will need a metal drivetrain throughout.
+
+1. I will probably also fit some sort of mini OLED display for showing battery charge and processor temperature or similar.
