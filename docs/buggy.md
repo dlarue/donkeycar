@@ -69,7 +69,7 @@ Mounting the on/off switch and connecting to terminals.
 This is the angle bracket with the switch and the small push button installed. The latter allows to shut-down the RPi through setting a specifc pin to ground. Please see Andrea [raspberry-pi-tricks](http://www.sensorsiot.org/raspberry-pi-tricks/) page.
 ![panel](./assets/panel.jpeg)
 
-To mount the ESC to the base plate I 3D printed as small holder with 2 holes for the screws.
+To mount the ESC to the base plate I 3D printed as small holder with two holes for the screws.
 ![esc-holder](./assets/esc-holder.jpeg)
 
 This is how it looks with all the electronics mounted on the rear of the base plate.
@@ -95,7 +95,7 @@ Next was the PCA 9685 PWM driver board which just needs pushing onto the studs. 
 ... and side view, here:
 ![pca9685-2](./assets/pca9685-2.jpeg)
 
-Afterwards attaching the RPi to the carrier plate with screws. My intention was to use the same printed studs like for the PWM driver pcb but it turned out that Cura (my 3D printer software) had decided to make the base columns of the RPi studs hollow which resulted in the top parts to brake off. So I scrwed in the RPi with 4 2.5mm mini Philips plastic screws.
+Afterwards attaching the RPi to the carrier plate with screws. My intention was to use the same printed studs like for the PWM driver pcb but it turned out that Cura (my 3D printer software) had decided to make the base columns of the RPi studs hollow which resulted in the top parts braking off. So I screwed in the RPi with four 2.5mm Philips plastic screws.
 
 Here is a view of the RPi attached and the carrier already provisionally moved into place.
 ![elec-all-1](./assets/elec-all-1.jpeg)
