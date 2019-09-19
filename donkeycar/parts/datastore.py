@@ -30,7 +30,8 @@ class Tub(object):
     t=Tub(path=path, inputs=inputs, types=types)
     """
 
-    def __init__(self, path, inputs=None, types=None, user_meta=[], allow_reverse=True):
+    def __init__(self, path, inputs=None, types=None,
+                 user_meta=[], allow_reverse=True):
 
         self.path = os.path.expanduser(path)
         self.meta_path = os.path.join(self.path, 'meta.json')
@@ -41,7 +42,7 @@ class Tub(object):
 
         if exists:
             # load log and meta
-            #print("Tub exists: {}".format(self.path))
+            print("Tub exists: {}".format(self.path))
             try:
                 with open(self.meta_path, 'r') as f:
                     self.meta = json.load(f)
@@ -69,7 +70,7 @@ class Tub(object):
         elif not exists and inputs:
             print('Tub does NOT exist. Creating new tub...')
             self.start_time = time.time()
-            #create log and save meta
+            # create log and save meta
             os.makedirs(self.path)
             self.meta = {'inputs': inputs, 'types': types, 'start': self.start_time}
             for kv in user_meta:
@@ -83,8 +84,9 @@ class Tub(object):
             self.exclude = set()
             print('New tub created at: {}'.format(self.path))
         else:
-            msg = "The tub path you provided doesn't exist and you didnt pass any meta info (inputs & types)" + \
-                  "to create a new tub. Please check your tub path or provide meta info to create a new tub."
+            msg = "The tub path " + path + " you provided doesn't exist and you"
+            " didnt pass any meta info (inputs & types) to create a new tub. "
+            " Please check your tub path or provide meta info to create a new tub."
 
             raise AttributeError(msg)
 
@@ -93,7 +95,8 @@ class Tub(object):
         return max(index)
 
     def update_df(self):
-        df = pd.DataFrame([self.get_json_record(i) for i in self.get_index(shuffled=False)])
+        df = pd.DataFrame([self.get_json_record(i)
+                           for i in self.get_index(shuffled=False)])
         self.df = df
 
     def get_df(self):
@@ -140,7 +143,7 @@ class Tub(object):
         try:
             with open(path, 'w') as fp:
                 json.dump(json_data, fp)
-                #print('wrote record:', json_data)
+
         except TypeError:
             print('troubles with record:', json_data)
         except FileNotFoundError:
