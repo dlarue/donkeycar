@@ -133,6 +133,21 @@ class CreateCar(BaseCommand):
         print("Donkey setup complete.")
 
 
+class UpdateCar(BaseCommand):
+    '''
+    always run in the base ~/mycar dir to get latest
+    '''
+
+    def parse_args(self, args):
+        parser = argparse.ArgumentParser(prog='update', usage='%(prog)s [options]')
+        parsed_args = parser.parse_args(args)
+        return parsed_args
+
+    def run(self, args):
+        cc = CreateCar()
+        cc.create_car(path=".", overwrite=True)
+
+
 class FindCar(BaseCommand):
     def parse_args(self, args):
         pass
@@ -609,7 +624,9 @@ def execute_from_command_line():
                 'createjs': CreateJoystick,
                 'consync': ConSync,
                 'contrain': ConTrain,
-                'cnnactivations': ShowCnnActivations}
+                'cnnactivations': ShowCnnActivations,
+                'update': UpdateCar,
+                }
 
     args = sys.argv[:]
 
