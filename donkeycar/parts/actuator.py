@@ -210,10 +210,6 @@ class PWMThrottle:
 
         # send zero pulse to calibrate ESC
         print("Init ESC")
-        # self.controller.set_pulse(self.max_pulse)
-        # time.sleep(0.01)
-        # self.controller.set_pulse(self.min_pulse)
-        # time.sleep(0.01)
         self.controller.set_pulse(self.zero_pulse)
         time.sleep(1)
         print('PWM Throttle created')
