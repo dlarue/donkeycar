@@ -286,17 +286,17 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
         model_type = cfg.DEFAULT_MODEL_TYPE
 
     if "tflite" in model_type:
-        #even though we are passed the .tflite output file, we train with an intermediate .h5
-        #output and then convert to final .tflite at the end.
+        # even though we are passed the .tflite output file, we train with an
+        # intermediate .h5 output and then convert to final .tflite at the end.
         assert(".tflite" in model_name)
-        #we only support the linear model type right now for tflite
-        assert("linear" in model_type)
+        # we only support linear or square+ model type right now for tflite
+        assert("linear" in model_type or "square_plus")
         model_name = model_name.replace(".tflite", ".h5")
     elif "tensorrt" in model_type:
-        #even though we are passed the .uff output file, we train with an intermediate .h5
-        #output and then convert to final .uff at the end.
+        # even though we are passed the .uff output file, we train with an
+        # intermediate .h5 output and then convert to final .uff at the end.
         assert(".uff" in model_name)
-        #we only support the linear model type right now for tensorrt
+        # we only support the linear model type right now for tensorrt
         assert("linear" in model_type)
         model_name = model_name.replace(".uff", ".h5")
 
@@ -311,6 +311,8 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
 
     if "linear" in model_type:
         train_type = "linear"
+    elif "square_plus" in model_type:
+        train_type = "square_plus"
     else:
         train_type = model_type
 
