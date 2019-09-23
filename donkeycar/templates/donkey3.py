@@ -6,6 +6,7 @@ controller and to do a calibration of the RC throttle and steering triggers.
 Usage:
     manage.py (drive) [--pid] [--no_cam] [--model=<path_to_pilot>]
     manage.py (calibrate)
+    manage.py (bench)
 
 Options:
     -h --help        Show this screen.
