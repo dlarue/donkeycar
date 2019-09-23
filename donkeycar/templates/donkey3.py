@@ -209,6 +209,22 @@ def calibrate(cfg):
     donkey_car.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
 
 
+def bench(cfg):
+    import numpy as np
+
+    class Calc:
+        def run(self):
+            a = 0
+            for i in range(20):
+                a += np.log(abs(np.random.rand(200, 200)))
+                return a[1][2]
+
+    c = Calc()
+    v = dk.vehicle.Vehicle()
+    v.add(c, outputs=['calc_out'])
+    v.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS, verbose=True)
+
+
 if __name__ == '__main__':
     args = docopt(__doc__)
     config = dk.load_config()
@@ -217,3 +233,6 @@ if __name__ == '__main__':
               model_path=args['--model'])
     elif args['calibrate']:
         calibrate(config)
+
+    elif args['bench']:
+        bench(config)
