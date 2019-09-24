@@ -220,9 +220,12 @@ def bench(cfg):
                 a += np.log(abs(np.random.rand(200, 200)))
                 return a[1][2]
 
-    c = Calc()
+    car = Calc()
     v = dk.vehicle.Vehicle()
-    v.add(c, outputs=['calc_out'])
+    v.add(car, outputs=['calc_out'])
+    clock = Timestamp()
+    car.add(clock, outputs=['timestamp'])
+
     v.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS, verbose=True)
 
 
