@@ -159,7 +159,7 @@ class KerasLinear(KerasPilot):
 
     def run(self, img_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
-        outputs = self.model.predict(img_arr, use_multiprocessing=True)
+        outputs = self.model.predict(img_arr, use_multiprocessing=True, batch_size=1)
         steering = outputs[0]
         throttle = outputs[1]
         return steering[0][0], throttle[0][0]
