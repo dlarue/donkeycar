@@ -252,8 +252,15 @@ def bench(cfg, model_path=None):
     car.add(ImgPrecondition(cfg), inputs=['cam/image_array'],
             outputs=['cam/normalized/cropped'])
 
+    class Shaper:
+        def run(self, img_arr):
+            img_reshape = img_arr.reshape((1,) + img_arr.shape)
+            return img_reshape
+
+    car.add(Shaper(), inputs=['cam/normalized/cropped'], outputs=['reshaped'])
+
     outputs = ['pilot/angle', 'pilot/speed' if use_pid else 'pilot/throttle']
-    car.add(kl, inputs=['cam/normalized/cropped'], outputs=outputs)
+    #car.add(kl, inputs=['cam/normalized/cropped'], outputs=outputs)
 
     car.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS, verbose=True)
 
