@@ -6,7 +6,7 @@ controller and to do a calibration of the RC throttle and steering triggers.
 Usage:
     manage.py (drive) [--pid] [--no_cam] [--model=<path_to_pilot>]
     manage.py (calibrate)
-    manage.py (bench)
+    manage.py (bench) [--model=<path_to_pilot>]
 
 Options:
     -h --help        Show this screen.
@@ -210,20 +210,10 @@ def calibrate(cfg):
     donkey_car.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
 
 
-def bench(cfg):
-    import numpy as np
+def bench(cfg, model_path=None):
 
-    class Calc:
-        def run(self):
-            a = 0
-            for i in range(20):
-                a += np.log(abs(np.random.rand(200, 200)))
-                return a[1][2]
-
+    use_pid = True
     car = dk.vehicle.Vehicle()
-
-    c = Calc()
-    car.add(c, outputs=['calc_out'])
 
     clock = Timestamp()
     car.add(clock, outputs=['timestamp'])
@@ -233,6 +223,37 @@ def bench(cfg):
 
     odo = Odometer()
     car.add(odo, outputs=['car/speed'])
+
+    rc_steering = RCReceiver(cfg.STEERING_RC_GPIO, invert=True)
+    rc_throttle = RCReceiver(cfg.THROTTLE_RC_GPIO)
+    rc_wiper = RCReceiver(cfg.DATA_WIPER_RC_GPIO, jitter=0.05, no_action=0)
+    car.add(rc_steering, outputs=['user/angle', 'user/steering_on'])
+    car.add(rc_throttle, outputs=['user/throttle', 'user/throttle_on'])
+    car.add(rc_wiper, outputs=['user/wiper', 'user/wiper_on'])
+
+    class Rescaler:
+        def run(self, controller_input):
+            return controller_input * cfg.MAX_SPEED
+
+    car.add(Rescaler(), inputs=['user/throttle'], outputs=['user/speed'])
+
+    print("Using auto-pilot")
+    model_type = 'tflite_linear' if '.tflite' in model_path else 'linear'
+    kl = dk.utils.get_model_by_type(model_type, cfg)
+    kl.load(model_path)
+
+    class ImgPrecondition:
+        def __init__(self, cfg):
+            self.cfg = cfg
+
+        def run(self, img_arr):
+            return normalize_and_crop(img_arr, self.cfg)
+
+    car.add(ImgPrecondition(cfg), inputs=['cam/image_array'],
+            outputs=['cam/normalized/cropped'])
+
+    outputs = ['pilot/angle', 'pilot/speed' if use_pid else 'pilot/throttle']
+    car.add(kl, inputs=['cam/normalized/cropped'], outputs=outputs)
 
     car.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS, verbose=True)
 
@@ -247,4 +268,4 @@ if __name__ == '__main__':
         calibrate(config)
 
     elif args['bench']:
-        bench(config)
+        bench(config, model_path=args['--model'])
