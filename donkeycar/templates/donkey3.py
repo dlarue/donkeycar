@@ -220,13 +220,15 @@ def bench(cfg):
                 a += np.log(abs(np.random.rand(200, 200)))
                 return a[1][2]
 
+    car = dk.vehicle.Vehicle()
     c = Calc()
-    v = dk.vehicle.Vehicle()
-    v.add(c, outputs=['calc_out'])
+    car.add(c, outputs=['calc_out'])
     clock = Timestamp()
-    v.add(clock, outputs=['timestamp'])
+    car.add(clock, outputs=['timestamp'])
+    cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
+    car.add(cam, outputs=['cam/image_array'], threaded=True)
 
-    v.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS, verbose=True)
+    car.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS, verbose=True)
 
 
 if __name__ == '__main__':
