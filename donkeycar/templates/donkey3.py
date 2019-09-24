@@ -211,9 +211,20 @@ def calibrate(cfg):
 
 
 def bench(cfg, model_path=None):
+    import numpy as np
+
+    class Calc:
+        def run(self):
+            a = 0
+            for i in range(20):
+                a += np.log(abs(np.random.rand(200, 200)))
+                return a[1][2]
 
     use_pid = True
     car = dk.vehicle.Vehicle()
+
+    c = Calc()
+    car.add(c, outputs=['calc_out'])
 
     clock = Timestamp()
     car.add(clock, outputs=['timestamp'])
@@ -252,15 +263,8 @@ def bench(cfg, model_path=None):
     car.add(ImgPrecondition(cfg), inputs=['cam/image_array'],
             outputs=['cam/normalized/cropped'])
 
-    class Shaper:
-        def run(self, img_arr):
-            img_reshape = img_arr.reshape((1,) + img_arr.shape)
-            return img_reshape
-
-    car.add(Shaper(), inputs=['cam/normalized/cropped'], outputs=['reshaped'])
-
     outputs = ['pilot/angle', 'pilot/speed' if use_pid else 'pilot/throttle']
-    #car.add(kl, inputs=['cam/normalized/cropped'], outputs=outputs)
+    car.add(kl, inputs=['cam/normalized/cropped'], outputs=outputs)
 
     car.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS, verbose=True)
 
