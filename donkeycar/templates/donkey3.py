@@ -221,12 +221,18 @@ def bench(cfg):
                 return a[1][2]
 
     car = dk.vehicle.Vehicle()
+
     c = Calc()
     car.add(c, outputs=['calc_out'])
+
     clock = Timestamp()
     car.add(clock, outputs=['timestamp'])
+
     cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
     car.add(cam, outputs=['cam/image_array'], threaded=True)
+
+    odo = Odometer()
+    car.add(odo, outputs=['car/speed'])
 
     car.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS, verbose=True)
 
