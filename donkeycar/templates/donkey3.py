@@ -4,7 +4,7 @@ Script to drive a donkey 2 car using the RC controller instead of the web
 controller and to do a calibration of the RC throttle and steering triggers.
 
 Usage:
-    manage.py (drive) [--pid] [--no_cam] [--model=<path_to_pilot>]
+    manage.py (drive) [--pid] [--no_cam] [--model=<path_to_pilot>] [--verbose]
     manage.py (calibrate)
 
 Options:
@@ -32,7 +32,7 @@ class TypePrinter:
         print("Type of", self.type_name, type(in_type))
 
 
-def drive(cfg, use_pid=False, no_cam=False, model_path=None):
+def drive(cfg, use_pid=False, no_cam=False, model_path=None, verbose=False):
     """
     Construct a working robotic vehicle from many parts. Each part runs as a job
     in the Vehicle loop, calling either its run or run_threaded method depending
@@ -159,8 +159,8 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None):
                   'car/speed', 'timestamp']
         types = ['image_array', 'float', 'float', 'float', 'str']
         # multiple tubs
-        tub_hand = TubHandler(path=cfg.DATA_PATH)
-        tub = tub_hand.new_tub_writer(inputs=inputs, types=types, allow_reverse=False)
+        tubh = TubHandler(path=cfg.DATA_PATH)
+        tub = tubh.new_tub_writer(inputs=inputs, types=types, allow_reverse=False)
         car.add(tub, inputs=inputs, outputs=["tub/num_records"],
                 run_condition='user/recording')
 
@@ -169,7 +169,8 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None):
         car.add(tub_wipe, inputs=['user/wiper_on'])
 
     # run the vehicle
-    car.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS, verbose=False)
+    car.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS,
+              verbose=verbose)
 
 
 def calibrate(cfg):
@@ -213,7 +214,10 @@ if __name__ == '__main__':
     args = docopt(__doc__)
     config = dk.load_config()
     if args['drive']:
-        drive(config, use_pid=args['--pid'], no_cam=args['--no_cam'],
-              model_path=args['--model'])
+        drive(config,
+              use_pid=args['--pid'],
+              no_cam=args['--no_cam'],
+              model_path=args['--model'],
+              verbose=args['--verbose'])
     elif args['calibrate']:
         calibrate(config)
