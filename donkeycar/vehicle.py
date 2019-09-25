@@ -34,9 +34,9 @@ class PartProfiler:
     def report(self):
         print("Part Profile Summary: (times in ms)")
         pt = PrettyTable()
-        pt.field_names = ["part", "max", "min", "avg"]
+        field_names = ["part", "max", "min", "avg"]
         pctile = [50, 90, 99, 99.9]
-        pt.field_names += [str(p) + '%' for p in pctile]
+        pt.field_names = field_names + [str(p) + '%' for p in pctile]
         for p, val in self.records.items():
             # remove first and last entry because you there could be one-off
             # time spent in initialisations, and the latest diff could be
