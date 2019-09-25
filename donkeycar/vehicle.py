@@ -132,7 +132,7 @@ class Vehicle:
                     entry.get('thread').start()
 
             # wait until the parts warm up.
-            print('Starting vehicle...')
+            print('Starting vehicle at {} Hz'.format(rate_hz))
 
             loop_count = 0
             while self.on:
