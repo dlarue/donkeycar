@@ -6,7 +6,7 @@ Created on Sun Jun 25 10:44:24 2017
 """
 
 import time
-from statistics import median
+import numpy as np
 from threading import Thread
 from .memory import Memory
 from prettytable import PrettyTable
@@ -34,7 +34,9 @@ class PartProfiler:
     def report(self):
         print("Part Profile Summary: (times in ms)")
         pt = PrettyTable()
-        pt.field_names = ["part", "max", "min", "avg", "median"]
+        pt.field_names = ["part", "max", "min", "avg"]
+        pctile = [50, 90, 99, 99.9]
+        pt.field_names += [str(p) + '%' for p in pctile]
         for p, val in self.records.items():
             # remove first and last entry because you there could be one-off
             # time spent in initialisations, and the latest diff could be
@@ -42,11 +44,12 @@ class PartProfiler:
             arr = val['times'][1:-1]
             if len(arr) == 0:
                 continue
-            pt.add_row([p.__class__.__name__,
-                        "%.2f" % (max(arr) * 1000),
-                        "%.2f" % (min(arr) * 1000),
-                        "%.2f" % (sum(arr) / len(arr) * 1000),
-                        "%.2f" % (median(arr) * 1000)])
+            row = [p.__class__.__name__,
+                   "%.2f" % (max(arr) * 1000),
+                   "%.2f" % (min(arr) * 1000),
+                   "%.2f" % (sum(arr) / len(arr) * 1000)]
+            row += ["%.2f" % (np.percentile(arr, p) * 1000) for p in pctile]
+            pt.add_row(row)
         print(pt)
 
 
