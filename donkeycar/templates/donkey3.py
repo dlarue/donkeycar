@@ -165,7 +165,7 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None, verbose=False):
                 run_condition='user/recording')
 
         # add a tub wiper that is triggered by channel 3 on the RC
-        tub_wipe = TubWiper(tub, num_records=20)
+        tub_wipe = TubWiper(tub, num_records=cfg.DRIVE_LOOP_HZ)
         car.add(tub_wipe, inputs=['user/wiper_on'])
 
     # run the vehicle
