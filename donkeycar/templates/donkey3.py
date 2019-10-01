@@ -51,7 +51,8 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None, verbose=False):
     car.add(clock, outputs=['timestamp'])
 
     if not no_cam:
-        cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
+        cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H,
+                       image_d=cfg.IMAGE_DEPTH, framerate=cfg.CAMERA_FRAMERATE)
         car.add(cam, outputs=['cam/image_array'], threaded=True)
 
     odo = Odometer()
