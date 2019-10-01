@@ -19,9 +19,8 @@ class PiCamera(BaseCamera):
 
         resolution = (image_w, image_h)
         # initialize the camera and stream
-        self.camera = PiCamera()  # PiCamera gets resolution (height, width)
+        self.camera = PiCamera(framerate=framerate)  # PiCamera gets resolution (height, width)
         self.camera.resolution = resolution
-        self.camera.framerate = framerate
         self.rawCapture = PiRGBArray(self.camera, size=resolution)
         self.stream = self.camera.capture_continuous(self.rawCapture,
                                                      format="rgb",
@@ -33,7 +32,8 @@ class PiCamera(BaseCamera):
         self.on = True
         self.image_d = image_d
 
-        print('PiCamera loaded...warming camera')
+        print('PiCamera loaded with frame size {} and frame rate {}...'
+              ' warming camera'.format(resolution, framerate))
         time.sleep(1)
 
     def run(self):
@@ -67,6 +67,7 @@ class PiCamera(BaseCamera):
         self.stream.close()
         self.rawCapture.close()
         self.camera.close()
+
 
 class Webcam(BaseCamera):
     def __init__(self, image_w=160, image_h=120, image_d=3, framerate = 20, iCam = 0):
