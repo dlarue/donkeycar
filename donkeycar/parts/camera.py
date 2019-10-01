@@ -19,8 +19,9 @@ class PiCamera(BaseCamera):
 
         resolution = (image_w, image_h)
         # initialize the camera and stream
-        self.camera = PiCamera(framerate=framerate)  # PiCamera gets resolution (height, width)
+        self.camera = PiCamera()  # PiCamera gets resolution (height, width)
         self.camera.resolution = resolution
+        self.camera.framerate = framerate
         self.rawCapture = PiRGBArray(self.camera, size=resolution)
         self.stream = self.camera.capture_continuous(self.rawCapture,
                                                      format="rgb",
