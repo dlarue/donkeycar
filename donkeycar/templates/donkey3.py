@@ -55,7 +55,7 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None, verbose=False):
                        image_d=cfg.IMAGE_DEPTH, framerate=cfg.CAMERA_FRAMERATE)
         car.add(cam, outputs=['cam/image_array'], threaded=True)
 
-    odo = Odometer()
+    odo = Odometer(debug=verbose)
     car.add(odo, outputs=['car/speed'])
 
     # create the RC receiver with 3 channels

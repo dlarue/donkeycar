@@ -73,4 +73,6 @@ class Odometer:
         print('Maximum speed {0:4.2f}, total distance {1:4.2f}'
               .format(self._max_speed,
                       float(self._distance) / float(self._tick_per_meter)))
+        if self._debug:
+            print('Total num ticks {}'.format(self._max_speed, self._distance))
 
