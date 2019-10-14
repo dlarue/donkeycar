@@ -114,7 +114,7 @@ class LapTimer:
         import pigpio
         if self.last_tick is not None:
             diff = pigpio.tickDiff(self.last_tick, tick)
-            sec = diff * 1.0e6
+            sec = diff * 1.0e-6
             if sec > self.min_time:
                 self.lap_times.append(sec)
                 self.lap_count += 1
@@ -138,5 +138,5 @@ class LapTimer:
         pt = PrettyTable()
         pt.field_names = ['Lap', 'Time']
         for i, t in enumerate(self.lap_times):
-            pt.add_row([i, '{5.3f}'.format(t)])
+            pt.add_row([i, '{0:6.3f}'.format(t)])
         print(pt)
