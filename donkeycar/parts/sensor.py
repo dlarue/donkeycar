@@ -3,6 +3,7 @@ sensor.py
 Classes for sensory information.
 
 """
+from prettytable import PrettyTable
 
 
 class Odometer:
@@ -16,6 +17,7 @@ class Odometer:
         :param tick_per_meter: how many signals per meter
         :param weight: weighting of current measurement in average speed
                         calculation
+        :param debug: if debug info should be printed
         """
         import pigpio
         self._gpio = gpio
@@ -76,3 +78,65 @@ class Odometer:
         if self._debug:
             print('Total num ticks {}'.format(self._max_speed, self._distance))
 
+
+class LapTimer:
+    """
+    LapTimer part to count the number of laps, and lap times
+    """
+    def __init__(self, gpio=16, debug=False):
+        """
+        :param gpio: gpio of sensor being connected
+        :param debug: if debug info should be printed
+        """
+        import pigpio
+        self.gpio = gpio
+        self.pi = pigpio.pi()
+        self.last_tick = None
+        self.lap_count = 0
+        self.lap_times = []
+        self.debug = debug
+        self.min_time = 0.5  # minimum lap time
+
+        # pigpio callback mechanics
+        self.pi.set_pull_up_down(self.gpio, pigpio.PUD_OFF)
+        self.cb = self.pi.callback(self.gpio, pigpio.FALLING_EDGE, self.cbf)
+        print("LapTimer added at gpio {}".format(gpio))
+
+    def cbf(self, gpio, level, tick):
+        """ Callback function for pigpio interrupt gpio. Signature is determined
+        by pigpiod library. This function is called every time the gpio changes
+        from high to low which will happen for the IR sensor TSOP4838 (and
+        others)
+        :param gpio: gpio to listen for state changes
+        :param level: rising/falling edge
+        :param tick: # of mu s since boot, 32 bit int
+        """
+        import pigpio
+        if self.last_tick is not None:
+            diff = pigpio.tickDiff(self.last_tick, tick)
+            sec = diff * 1.0e6
+            if sec > self.min_time:
+                self.lap_times.append(sec)
+                self.lap_count += 1
+            if self.debug:
+                print('Lap {} completed in {}s'.format(self.lap_count, sec))
+        self.last_tick = tick
+
+    def run(self):
+        """
+        :return: current lap number
+        """
+        return self.lap_count
+
+    def shutdown(self):
+        """
+        Donkey parts interface
+        """
+        import pigpio
+        self.cb.cancel()
+        print("Lap Summary: (times in s)")
+        pt = PrettyTable()
+        pt.field_names = ['Lap', 'Time']
+        for i, t in enumerate(self.lap_times):
+            pt.add_row([i, '{5.3f}'.format(t)])
+        print(pt)

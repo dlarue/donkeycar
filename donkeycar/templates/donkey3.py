@@ -19,7 +19,7 @@ from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle, RCReceiv
 from donkeycar.parts.datastore import TubWiper, TubHandler
 from donkeycar.parts.clock import Timestamp
 from donkeycar.parts.transform import PIDController
-from donkeycar.parts.sensor import Odometer
+from donkeycar.parts.sensor import Odometer, LapTimer
 
 from donkeycar.utils import normalize_and_crop
 
@@ -55,8 +55,10 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None, verbose=False):
                        image_d=cfg.IMAGE_DEPTH, framerate=cfg.CAMERA_FRAMERATE)
         car.add(cam, outputs=['cam/image_array'], threaded=True)
 
-    odo = Odometer(debug=verbose)
+    odo = Odometer(gpio=cfg.ODOMETER_GPIO, debug=verbose)
     car.add(odo, outputs=['car/speed'])
+    lap = LapTimer(gpio=cfg.LAP_TIMER_GPIO, debug=verbose)
+    car.add(lap, outputs=['car/lap'])
 
     # create the RC receiver with 3 channels
     rc_steering = RCReceiver(cfg.STEERING_RC_GPIO, invert=True)
@@ -207,8 +209,8 @@ def calibrate(cfg):
     donkey_car.add(Plotter(), inputs=['user/angle', 'user/steering_on',
                                       'user/throttle', 'user/throttle_on',
                                       'user/wiper', 'user/wiper_on'])
-    # run the vehicle
-    donkey_car.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
+    # run the vehicle at 5Hz to keep network traffic down
+    donkey_car.start(rate_hz=5, max_loop_count=cfg.MAX_LOOPS)
 
 
 if __name__ == '__main__':
