@@ -15,7 +15,8 @@ from docopt import docopt
 
 import donkeycar as dk
 from donkeycar.parts.camera import PiCamera
-from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle, RCReceiver, ModeSwitch
+from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle, \
+    RCReceiver, ModeSwitch
 from donkeycar.parts.datastore import TubWiper, TubHandler
 from donkeycar.parts.clock import Timestamp
 from donkeycar.parts.transform import PIDController
@@ -119,8 +120,8 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None, verbose=False):
                 return car_speed - user_speed
 
         # use pid either for rc control output or for ai output
-        inputs = ['car/speed', 'speed' if model_path is not None else 'user/speed']
-        car.add(PidError(), inputs=inputs, outputs=['pid/error'])
+        speed = 'speed' if model_path is not None else 'user/speed'
+        car.add(PidError(), inputs=['car/speed', speed], outputs=['pid/error'])
 
         # add pid controller to convert throttle value into speed
         pid = PIDController(p=cfg.PID_P, i=cfg.PID_I, d=cfg.PID_D, debug=False)
@@ -133,7 +134,8 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None, verbose=False):
                            zero_pulse=cfg.THROTTLE_STOPPED_PWM,
                            min_pulse=cfg.THROTTLE_REVERSE_PWM)
     # feed signal which is either rc (user) or ai
-    input_field = 'user/throttle' if not use_pid and model_path is None else 'throttle'
+    input_field = 'user/throttle' if not use_pid and model_path is None \
+        else 'throttle'
     car.add(throttle, inputs=[input_field])
     # create the PWM steering controller
     steering_controller = PCA9685(cfg.STEERING_CHANNEL)
@@ -159,12 +161,16 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None, verbose=False):
 
         # add tub to save data
         inputs = ['cam/image_array', 'user/angle', 'user/throttle',
-                  'car/speed', 'timestamp']
-        types = ['image_array', 'float', 'float', 'float', 'str']
+                  'car/speed', 'car/lap', 'timestamp']
+        types = ['image_array', 'float', 'float', 'float', 'int', 'str']
         # multiple tubs
         tubh = TubHandler(path=cfg.DATA_PATH)
-        tub = tubh.new_tub_writer(inputs=inputs, types=types, allow_reverse=False)
-        car.add(tub, inputs=inputs, outputs=["tub/num_records"],
+        tub = tubh.new_tub_writer(inputs=inputs,
+                                  types=types,
+                                  allow_reverse=False)
+        car.add(tub,
+                inputs=inputs,
+                outputs=["tub/num_records"],
                 run_condition='user/recording')
 
         # add a tub wiper that is triggered by channel 3 on the RC
