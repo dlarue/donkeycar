@@ -83,7 +83,7 @@ class LapTimer:
     """
     LapTimer part to count the number of laps, and lap times
     """
-    def __init__(self, gpio=16, debug=False):
+    def __init__(self, gpio=16, min_time=1.0, debug=False):
         """
         :param gpio: gpio of sensor being connected
         :param debug: if debug info should be printed
@@ -95,7 +95,7 @@ class LapTimer:
         self.lap_count = 0
         self.lap_times = []
         self.debug = debug
-        self.min_time = 0.5  # minimum lap time
+        self.min_time = min_time  # minimum lap time
 
         # pigpio callback mechanics
         self.pi.set_pull_up_down(self.gpio, pigpio.PUD_OFF)
