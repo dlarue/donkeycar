@@ -30,6 +30,7 @@ class Odometer:
         self._max_speed = 0.0
         self._distance = 0
         self._debug = debug
+        self._run_counter = 0
 
         # pigpio callback mechanics
         self._pi.set_pull_up_down(self._gpio, pigpio.PUD_UP)
@@ -62,8 +63,9 @@ class Odometer:
             speed = 1.0e6 / (self._avg * self._tick_per_meter)
             self._max_speed = max(self._max_speed, speed)
         self._last_tick_speed = self._last_tick
-        if self._debug:
+        if self._debug and self._run_counter % 20 == 0:
             print("Speed =", speed)
+        self._run_counter += 1
         return speed
 
     def shutdown(self):
@@ -118,9 +120,10 @@ class LapTimer:
             if sec > self.min_time:
                 self.lap_times.append(sec)
                 self.lap_count += 1
-            if self.debug:
-                print('Lap {} completed in {}s'.format(self.lap_count, sec))
+                if self.debug:
+                    print('Lap {} completed in {}s'.format(self.lap_count, sec))
         self.last_tick = tick
+
 
     def run(self):
         """
