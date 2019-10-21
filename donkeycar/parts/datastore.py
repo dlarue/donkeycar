@@ -354,8 +354,19 @@ class Tub(object):
         import shutil
         shutil.rmtree(self.path)
 
-    def shutdown(self):
-        pass
+    def shutdown(self, exit_info=None):
+        # if exit argument is passed in
+        if exit_info is not None:
+            assert type(exit_info) is dict, "Only dictionary arguments allowed"
+            file_path = os.path.join(self.path, "exit.json")
+            try:
+                with open(file_path, 'w') as fp:
+                    json.dump(exit_info, fp)
+            except FileNotFoundError:
+                raise
+            except:
+                print("Unexpected error:", sys.exc_info()[0])
+                raise
 
     def excluded(self, index):
         return index in self.exclude

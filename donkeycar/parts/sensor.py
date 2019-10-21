@@ -119,9 +119,9 @@ class LapTimer:
             sec = diff * 1.0e-6
             if sec > self.min_time:
                 self.lap_times.append(sec)
-                self.lap_count += 1
                 if self.debug:
                     print('Lap {} completed in {}s'.format(self.lap_count, sec))
+                self.lap_count += 1
         self.last_tick = tick
 
 
@@ -131,7 +131,7 @@ class LapTimer:
         """
         return self.lap_count
 
-    def shutdown(self):
+    def shutdown(self, exit_info=None):
         """
         Donkey parts interface
         """
@@ -140,6 +140,11 @@ class LapTimer:
         print("Lap Summary: (times in s)")
         pt = PrettyTable()
         pt.field_names = ['Lap', 'Time']
-        for i, t in enumerate(self.lap_times):
-            pt.add_row([i+1, '{0:6.3f}'.format(t)])
+        info_list = []
+        for i, t in enumerate(self.lap_times[1:]):
+            info_list.append([i, t])
+            pt.add_row([i, '{0:6.3f}'.format(t)])
+        exit_info['LapTimer'] = info_list
         print(pt)
+
+
