@@ -59,6 +59,7 @@ setup(name='donkeycar',
           ],
           'pc': [
               'matplotlib',
+              'plotly'
           ],
           'dev': [
               'pytest',
