@@ -144,7 +144,7 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None, verbose=False):
                            right_pulse=cfg.STEERING_RIGHT_PWM)
     # feed signal which is either rc (user) or ai
     input_field = 'user/angle' if model_path is None else 'pilot/angle'
-    car.add(steering, inputs=[input_field])
+    car.add(steering, inputs=[input_field], threaded=True)
 
     # only record if cam is on and no auto-pilot
     record_on_ai = cfg.RECORD_DURING_AI if hasattr(cfg, 'RECORD_DURING_AI') \
