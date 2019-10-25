@@ -172,7 +172,9 @@ class PWMSteering:
         self.controller = controller
         self.left_pulse = left_pulse
         self.right_pulse = right_pulse
-        self.pulse = None
+        self.pulse = dk.utils.map_range(0,
+                                        self.LEFT_ANGLE, self.RIGHT_ANGLE,
+                                        self.left_pulse, self.right_pulse)
         self.running = True
         print('PWM Steering created')
 
