@@ -168,26 +168,33 @@ class PWMSteering:
     LEFT_ANGLE = -1
     RIGHT_ANGLE = 1
 
-    def __init__(self, controller=None,
-                       left_pulse=290,
-                       right_pulse=490):
-
+    def __init__(self, controller=None, left_pulse=290, right_pulse=490):
         self.controller = controller
         self.left_pulse = left_pulse
         self.right_pulse = right_pulse
+        self.pulse = None
+        self.running = True
         print('PWM Steering created')
 
-    def run(self, angle):
-        # map absolute angle to angle that vehicle can implement.
-        pulse = dk.utils.map_range(angle,
-                                self.LEFT_ANGLE, self.RIGHT_ANGLE,
-                                self.left_pulse, self.right_pulse)
+    def update(self):
+        while self.running:
+            self.controller.set_pulse(self.pulse)
 
-        self.controller.set_pulse(pulse)
+    def run_threaded(self, angle):
+        # map absolute angle to angle that vehicle can implement.
+        self.pulse = dk.utils.map_range(angle,
+                                        self.LEFT_ANGLE, self.RIGHT_ANGLE,
+                                        self.left_pulse, self.right_pulse)
+
+    def run(self, angle):
+        self.run_threaded(angle)
+        self.controller.set_pulse(self.pulse)
 
     def shutdown(self):
         # set steering straight
-        self.run(0)
+        self.pulse = 0
+        time.sleep(0.3)
+        self.running = False
 
 
 class PWMThrottle:
