@@ -168,12 +168,15 @@ class PWMSteering:
     LEFT_ANGLE = -1
     RIGHT_ANGLE = 1
 
-    def __init__(self, controller=None, left_pulse=290, right_pulse=490):
+    def __init__(self,
+                 controller=None,
+                 left_pulse=290,
+                 right_pulse=490):
+
         self.controller = controller
         self.left_pulse = left_pulse
         self.right_pulse = right_pulse
-        self.pulse = dk.utils.map_range(0,
-                                        self.LEFT_ANGLE, self.RIGHT_ANGLE,
+        self.pulse = dk.utils.map_range(0, self.LEFT_ANGLE, self.RIGHT_ANGLE,
                                         self.left_pulse, self.right_pulse)
         self.running = True
         print('PWM Steering created')
@@ -205,36 +208,47 @@ class PWMThrottle:
     values to PWM pulses.
     """
     MIN_THROTTLE = -1
-    MAX_THROTTLE =  1
+    MAX_THROTTLE = 1
 
-    def __init__(self, controller=None,
-                       max_pulse=300,
-                       min_pulse=490,
-                       zero_pulse=350):
+    def __init__(self,
+                 controller=None,
+                 max_pulse=300,
+                 min_pulse=490,
+                 zero_pulse=350):
 
         self.controller = controller
         self.max_pulse = max_pulse
         self.min_pulse = min_pulse
         self.zero_pulse = zero_pulse
+        self.pulse = zero_pulse
 
         # send zero pulse to calibrate ESC
         print("Init ESC")
         self.controller.set_pulse(self.zero_pulse)
         time.sleep(1)
+        self.running = True
         print('PWM Throttle created')
 
-    def run(self, throttle):
+    def update(self):
+        while self.running:
+            self.controller.set_pulse(self.pulse)
+
+    def run_threaded(self, throttle):
         if throttle > 0:
-            pulse = dk.utils.map_range(throttle, 0, self.MAX_THROTTLE,
-                                       self.zero_pulse, self.max_pulse)
+            self.pulse = dk.utils.map_range(throttle, 0, self.MAX_THROTTLE,
+                                            self.zero_pulse, self.max_pulse)
         else:
-            pulse = dk.utils.map_range(throttle, self.MIN_THROTTLE, 0,
-                                       self.min_pulse, self.zero_pulse)
-        self.controller.set_pulse(pulse)
+            self.pulse = dk.utils.map_range(throttle, self.MIN_THROTTLE, 0,
+                                            self.min_pulse, self.zero_pulse)
+
+    def run(self, throttle):
+        self.run_threaded(throttle)
+        self.controller.set_pulse(self.pulse)
 
     def shutdown(self):
         # stop vehicle
         self.run(0)
+        self.running = False
 
 
 class Adafruit_DCMotor_Hat:

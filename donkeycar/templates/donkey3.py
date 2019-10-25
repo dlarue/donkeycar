@@ -136,7 +136,7 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None, verbose=False):
     # feed signal which is either rc (user) or ai
     input_field = 'user/throttle' if not use_pid and model_path is None \
         else 'throttle'
-    car.add(throttle, inputs=[input_field])
+    car.add(throttle, inputs=[input_field], threaded=True)
     # create the PWM steering controller
     steering_controller = PCA9685(cfg.STEERING_CHANNEL)
     steering = PWMSteering(controller=steering_controller,
