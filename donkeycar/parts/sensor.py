@@ -85,7 +85,7 @@ class LapTimer:
     """
     LapTimer part to count the number of laps, and lap times
     """
-    def __init__(self, gpio=16, min_time=1.0, debug=False):
+    def __init__(self, gpio=16, min_time=1.0):
         """
         :param gpio: gpio of sensor being connected
         :param debug: if debug info should be printed
@@ -119,8 +119,7 @@ class LapTimer:
             sec = diff * 1.0e-6
             if sec > self.min_time:
                 self.lap_times.append(sec)
-                if self.debug:
-                    print('Lap {} completed in {}s'.format(self.lap_count, sec))
+                print('Lap {} completed in {}s'.format(self.lap_count, sec))
                 self.lap_count += 1
         self.last_tick = tick
 

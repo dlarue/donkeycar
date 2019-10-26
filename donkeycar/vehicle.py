@@ -204,7 +204,7 @@ class Vehicle:
         for entry in self.parts:
             try:
                 entry['part'].shutdown(exit_info)
-            # shutdown migth be implemented w/o input dictionary
+            # shutdown might be implemented w/o input dictionary
             except TypeError:
                 entry['part'].shutdown()
             # usually from missing shutdown method, which should be optional
