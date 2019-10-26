@@ -22,31 +22,31 @@ print('extra_files', extra_files)
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+
 setup(name='donkeycar',
-      version='3.1.0',
-      long_description=long_description,
-      description='Self driving library for python.',
-      url='https://github.com/autorope/donkeycar',
-      author='Will Roscoe, Adam Conway, Tawn Kramer',
-      author_email='wroscoe@gmail.com, adam@casaconway.com, tawnkramer@gmail.com',
-      license='MIT',
-      entry_points={
-          'console_scripts': [
-              'donkey=donkeycar.management.base:execute_from_command_line',
-          ],
-      },
-      install_requires=['numpy',
-                        'pillow',
-                        'docopt',
-                        'tornado',
-                        'requests',
-                        'h5py',
-                        'moviepy',
-                        'pandas',
-                        'PrettyTable',
-                        'paho-mqtt',
-                        'progress'
-                        ],
+    version='3.1.1',
+    long_description = long_description,
+    description='Self driving library for python.',
+    url='https://github.com/autorope/donkeycar',
+    author='Will Roscoe, Adam Conway, Tawn Kramer',
+    author_email='wroscoe@gmail.com, adam@casaconway.com, tawnkramer@gmail.com',
+    license='MIT',
+    entry_points={
+        'console_scripts': [
+            'donkey=donkeycar.management.base:execute_from_command_line',
+        ],
+    },
+    install_requires=['numpy', 
+                      'pillow',
+                      'docopt',
+                      'tornado',
+                      'requests',
+                      'h5py',
+                      'moviepy',
+                      'pandas',
+                      'PrettyTable',
+                      'paho-mqtt'
+                     ],
 
       extras_require={
           'pi': [
