@@ -85,7 +85,7 @@ class LapTimer:
     """
     LapTimer part to count the number of laps, and lap times
     """
-    def __init__(self, gpio=16, min_time=1.0):
+    def __init__(self, gpio=16, min_time=1.0, debug=None):
         """
         :param gpio: gpio of sensor being connected
         :param debug: if debug info should be printed
