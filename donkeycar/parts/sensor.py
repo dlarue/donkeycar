@@ -123,7 +123,6 @@ class LapTimer:
                 self.lap_count += 1
         self.last_tick = tick
 
-
     def run(self):
         """
         :return: current lap number
@@ -139,11 +138,8 @@ class LapTimer:
         print("Lap Summary: (times in s)")
         pt = PrettyTable()
         pt.field_names = ['Lap', 'Time']
-        info_list = []
         for i, t in enumerate(self.lap_times[1:]):
-            info_list.append([i, t])
             pt.add_row([i, '{0:6.3f}'.format(t)])
-        exit_info['LapTimer'] = info_list
         print(pt)
 
 

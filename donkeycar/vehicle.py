@@ -200,16 +200,13 @@ class Vehicle:
 
     def stop(self):        
         print('Shutting down vehicle and its parts...')
-        exit_info = {}
         for entry in self.parts:
             try:
-                entry['part'].shutdown(exit_info)
-            # shutdown might be implemented w/o input dictionary
-            except TypeError:
                 entry['part'].shutdown()
-            # usually from missing shutdown method, which should be optional
             except AttributeError:
+                # usually from missing shutdown method, which should be optional
                 pass
             except Exception as e:
                 print(e)
+
         self.profiler.report()

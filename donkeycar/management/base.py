@@ -608,6 +608,34 @@ class ShowPredictionMetric(BaseCommand):
         self.evaluate_predictions(cfg, args.tub, args.model, args.limit, args.type)
 
 
+class ShowLapTimes(BaseCommand):
+
+    def print_laps(self, cfg, tub_paths):
+        '''
+        Plot model predictions for angle and throttle against data from tubs.
+        '''
+        for tub_path in tub_paths.split(','):
+            tub = Tub(tub_path)
+            df = tub.make_lap_times()
+            print(df, '\n')
+
+    def parse_args(self, args):
+        parser = argparse.ArgumentParser(prog='laps',
+                                         usage='%(prog)s [options]')
+        parser.add_argument('--tub', nargs='+',
+                            help='paths to tubs')
+        parser.add_argument('--config', default='./config.py',
+                            help='location of config file to use. default: ./config.py')
+        parsed_args = parser.parse_args(args)
+        return parsed_args
+
+    def run(self, args):
+        args = self.parse_args(args)
+        args.tub = ','.join(args.tub)
+        cfg = load_config(args.config)
+        self.print_laps(cfg, args.tub)
+
+
 def execute_from_command_line():
     """
     This is the function linked to the "donkey" terminal command.
@@ -626,6 +654,7 @@ def execute_from_command_line():
                 'contrain': ConTrain,
                 'cnnactivations': ShowCnnActivations,
                 'update': UpdateCar,
+                'laps': ShowLapTimes
                 }
 
     args = sys.argv[:]

@@ -380,13 +380,29 @@ class Tub(object):
         except:
             pass
 
+    def make_lap_times(self):
+        """
+        Method returns a dataframe with lap numbers and times
+        :return: dataframe
+        """
+        df = self.get_df()
+        assert 'car/lap' in df.columns, 'No lap data found in tub' + self.path
+        laps = df['car/lap'].unique()
+        times = []
+        for l in laps:
+            mask = df['car/lap'] == l
+            lap_df = df[mask]
+            [start, end] = lap_df['milliseconds'].iloc[[0, -1]]
+            times.append((end - start) * 1.0e-3)
+        return pd.DataFrame(dict(lap=laps, lap_times=times))
+
     def write_exclude(self):
         if 0 == len(self.exclude):
             # If the exclude set is empty don't leave an empty file around.
             if os.path.exists(self.exclude_path):
                 os.unlink(self.exclude_path)
         else:
-            with open(self.exclude_path,'w') as f:
+            with open(self.exclude_path, 'w') as f:
                 json.dump(list(self.exclude), f)
 
     def get_record_gen(self, record_transform=None, shuffle=True, df=None):
