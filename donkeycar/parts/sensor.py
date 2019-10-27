@@ -138,7 +138,7 @@ class LapTimer:
         print("Lap Summary: (times in s)")
         pt = PrettyTable()
         pt.field_names = ['Lap', 'Time']
-        for i, t in enumerate(self.lap_times[1:]):
+        for i, t in enumerate(self.lap_times):
             pt.add_row([i, '{0:6.3f}'.format(t)])
         print(pt)
 
