@@ -4,6 +4,7 @@ Classes for sensory information.
 
 """
 from prettytable import PrettyTable
+import time
 
 
 class Odometer:
@@ -83,7 +84,7 @@ class Odometer:
 
 class LapTimer:
     """
-    LapTimer part to count the number of laps, and lap times
+    LapTimer to count the number of laps, and lap times, based on interrupts
     """
     def __init__(self, gpio=16, min_time=1.0, debug=None):
         """
@@ -129,12 +130,79 @@ class LapTimer:
         """
         return self.lap_count
 
-    def shutdown(self, exit_info=None):
+    def shutdown(self):
         """
         Donkey parts interface
         """
         import pigpio
         self.cb.cancel()
+        print("Lap Summary: (times in s)")
+        pt = PrettyTable()
+        pt.field_names = ['Lap', 'Time']
+        for i, t in enumerate(self.lap_times):
+            pt.add_row([i, '{0:6.3f}'.format(t)])
+        print(pt)
+
+
+class LapTimerThreaded:
+    """
+    LapTimer to count the number of laps, and lap times, based on gpio counts
+    """
+    def __init__(self, gpio=16, trigger=5, debug=None):
+        """
+        :param gpio: gpio of sensor being connected
+        :param debug: if debug info should be printed
+        """
+        import pigpio
+        self.gpio = gpio
+        self.pi = pigpio.pi()
+        self.last_time = time.time()
+        self.lap_count = 0
+        self.lap_times = []
+        self.debug = debug
+        self.running = True
+        self.count_lo = 0
+        self.trigger = trigger
+        print("LapTimerThreaded added at gpio {}".format(gpio))
+
+    def update(self):
+        """
+        Donkey parts interface
+        """
+        while self.running:
+            current_state = self.pi.read(self.gpio)
+            # Signal detected: if pin is lo
+            if current_state == 0:
+                self.count_lo += 1
+            # No signal: pin is high
+            else:
+                # assume when seeing enough consecutive lo this was a real
+                # signal and the sensor went back to high
+                if self.count_lo > self.trigger:
+                    now = time.time()
+                    dt = now - self.last_time
+                    print('Lap {} detected after {}s'.format(self.lap_count, dt))
+                    self.last_time = now
+                    self.lap_count += 1
+                    self.lap_times.append(dt)
+                # rest lo counter
+                self.count_lo = 0
+            # Sleep for 2ms. At 5m/s car makes 1cm / 2ms. At that speed trigger
+            # determines how many cm the car has to be in the absorption area
+            # of the IR signal (by default 5). This scales down w/ the speed.
+            time.sleep(0.002)
+
+    def run_threaded(self):
+        """
+        Donkey parts interface
+        """
+        return self.lap_count
+
+    def shutdown(self):
+        """
+        Donkey parts interface
+        """
+        self.running = False
         print("Lap Summary: (times in s)")
         pt = PrettyTable()
         pt.field_names = ['Lap', 'Time']
