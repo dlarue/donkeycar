@@ -20,7 +20,7 @@ from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle, \
 from donkeycar.parts.datastore import TubWiper, TubHandler
 from donkeycar.parts.clock import Timestamp
 from donkeycar.parts.transform import PIDController
-from donkeycar.parts.sensor import Odometer, LapTimer, LapTimerThreaded
+from donkeycar.parts.sensor import Odometer, LapTimer
 
 from donkeycar.utils import normalize_and_crop
 
@@ -58,7 +58,7 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None, verbose=False):
 
     odo = Odometer(gpio=cfg.ODOMETER_GPIO, debug=verbose)
     car.add(odo, outputs=['car/speed'])
-    lap = LapTimerThreaded(gpio=cfg.LAP_TIMER_GPIO)
+    lap = LapTimer(gpio=cfg.LAP_TIMER_GPIO)
     car.add(lap, outputs=['car/lap'], threaded=True)
 
     # create the RC receiver with 3 channels

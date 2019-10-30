@@ -84,68 +84,6 @@ class Odometer:
 
 class LapTimer:
     """
-    LapTimer to count the number of laps, and lap times, based on interrupts
-    """
-    def __init__(self, gpio=16, min_time=1.0, debug=None):
-        """
-        :param gpio: gpio of sensor being connected
-        :param debug: if debug info should be printed
-        """
-        import pigpio
-        self.gpio = gpio
-        self.pi = pigpio.pi()
-        self.last_tick = None
-        self.lap_count = 0
-        self.lap_times = []
-        self.debug = debug
-        self.min_time = min_time  # minimum lap time
-
-        # pigpio callback mechanics
-        self.pi.set_pull_up_down(self.gpio, pigpio.PUD_OFF)
-        self.cb = self.pi.callback(self.gpio, pigpio.FALLING_EDGE, self.cbf)
-        print("LapTimer added at gpio {}".format(gpio))
-
-    def cbf(self, gpio, level, tick):
-        """ Callback function for pigpio interrupt gpio. Signature is determined
-        by pigpiod library. This function is called every time the gpio changes
-        from high to low which will happen for the IR sensor TSOP4838 (and
-        others)
-        :param gpio: gpio to listen for state changes
-        :param level: rising/falling edge
-        :param tick: # of mu s since boot, 32 bit int
-        """
-        import pigpio
-        if self.last_tick is not None:
-            diff = pigpio.tickDiff(self.last_tick, tick)
-            sec = diff * 1.0e-6
-            if sec > self.min_time:
-                self.lap_times.append(sec)
-                print('Lap {} completed in {}s'.format(self.lap_count, sec))
-                self.lap_count += 1
-        self.last_tick = tick
-
-    def run(self):
-        """
-        :return: current lap number
-        """
-        return self.lap_count
-
-    def shutdown(self):
-        """
-        Donkey parts interface
-        """
-        import pigpio
-        self.cb.cancel()
-        print("Lap Summary: (times in s)")
-        pt = PrettyTable()
-        pt.field_names = ['Lap', 'Time']
-        for i, t in enumerate(self.lap_times):
-            pt.add_row([i, '{0:6.3f}'.format(t)])
-        print(pt)
-
-
-class LapTimerThreaded:
-    """
     LapTimer to count the number of laps, and lap times, based on gpio counts
     """
     def __init__(self, gpio=16, trigger=5, debug=None):
@@ -181,7 +119,8 @@ class LapTimerThreaded:
                 if self.count_lo > self.trigger:
                     now = time.time()
                     dt = now - self.last_time
-                    print('Lap {} detected after {}s'.format(self.lap_count, dt))
+                    print('Lap {0} detected after {1:6.3f}s'
+                          .format(self.lap_count, dt))
                     self.last_time = now
                     self.lap_count += 1
                     self.lap_times.append(dt)
