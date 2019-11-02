@@ -56,7 +56,9 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None, verbose=False):
                        image_d=cfg.IMAGE_DEPTH, framerate=cfg.CAMERA_FRAMERATE)
         car.add(cam, outputs=['cam/image_array'], threaded=True)
 
-    odo = Odometer(gpio=cfg.ODOMETER_GPIO, debug=verbose)
+    odo = Odometer(gpio=cfg.ODOMETER_GPIO,
+                   tick_per_meter=cfg.TICK_PER_M,
+                   debug=verbose)
     car.add(odo, outputs=['car/speed'])
     lap = LapTimer(gpio=cfg.LAP_TIMER_GPIO)
     car.add(lap, outputs=['car/lap'], threaded=True)
