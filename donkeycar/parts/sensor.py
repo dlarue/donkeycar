@@ -86,7 +86,7 @@ class LapTimer:
     """
     LapTimer to count the number of laps, and lap times, based on gpio counts
     """
-    def __init__(self, gpio=16, trigger=8, debug=None):
+    def __init__(self, gpio=16, trigger=5, min_time=1.0, debug=None):
         """
         :param gpio: gpio of sensor being connected
         :param debug: if debug info should be printed
@@ -101,6 +101,7 @@ class LapTimer:
         self.running = True
         self.count_lo = 0
         self.trigger = trigger
+        self.min_time = min_time
         print("LapTimerThreaded added at gpio {}".format(gpio))
 
     def update(self):
@@ -119,11 +120,13 @@ class LapTimer:
                 if self.count_lo > self.trigger:
                     now = time.time()
                     dt = now - self.last_time
-                    print('Lap {0} detected after {1:6.3f}s'
-                          .format(self.lap_count, dt))
-                    self.last_time = now
-                    self.lap_count += 1
-                    self.lap_times.append(dt)
+                    # only count lap if more than min_time passed
+                    if dt > self.min_time:
+                        print('Lap {0} detected after {1:6.3f}s'
+                              .format(self.lap_count, dt))
+                        self.last_time = now
+                        self.lap_count += 1
+                        self.lap_times.append(dt)
                 # rest lo counter
                 self.count_lo = 0
             # Sleep for 2ms. At 5m/s car makes 1cm / 2ms. At that speed trigger
