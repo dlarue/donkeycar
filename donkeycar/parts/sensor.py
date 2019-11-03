@@ -12,7 +12,7 @@ class Odometer:
     Odometric part to measure the speed usually through hall sensors sensing
     magnets attached to the drive system.
     """
-    def __init__(self, gpio=6, tick_per_meter=76, weight=0.5, debug=False):
+    def __init__(self, gpio=6, tick_per_meter=225, weight=0.5, debug=False):
         """
         :param gpio: gpio of sensor being connected
         :param tick_per_meter: how many signals per meter
