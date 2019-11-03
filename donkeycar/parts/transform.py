@@ -2,6 +2,7 @@
 
 import time
 
+
 class Lambda:
     """
     Wraps a function into a donkey part.
@@ -18,6 +19,7 @@ class Lambda:
     def shutdown(self):
         return
 
+
 class TriggeredCallback:
     def __init__(self, args, func_cb):
         self.args = args
@@ -29,6 +31,7 @@ class TriggeredCallback:
 
     def shutdown(self):
         return
+
 
 class DelayedTrigger:
     def __init__(self, delay):
@@ -64,50 +67,37 @@ class PIDController:
         self.Ki = i
         self.Kd = d
 
-        # The value the controller is trying to get the system to achieve.
-        self.target = 0
-
         # initialize delta t variables
         self.prev_tm = time.time()
         self.prev_err = 0
-        self.error = None
         self.totalError = 0
-
-        # initialize the output
-        self.alpha = 0
-        self.err_sum = 0
 
         # debug flag (set to True for console output)
         self.debug = debug
 
     def run(self, err):
         curr_tm = time.time()
-
-        self.difError = err - self.prev_err
-
         # Calculate time differential.
         dt = curr_tm - self.prev_tm
+        # error differential
+        dif_error = err - self.prev_err
+        # integral error
+        self.totalError += err
 
         # Initialize output variable.
-        curr_alpha = 0
-
+        curr_alpha = 0.0
         # Add proportional component.
         curr_alpha += -self.Kp * err
-
         # Add integral component.
-        curr_alpha += -self.Ki * (self.totalError * dt)
+        curr_alpha += -self.Ki * self.totalError * dt
 
         # Add differential component (avoiding divide-by-zero).
         if dt > 0:
-            curr_alpha += -self.Kd * (self.difError / float(dt))
+            curr_alpha += -self.Kd * dif_error / float(dt)
 
         # Maintain memory for next loop.
         self.prev_tm = curr_tm
         self.prev_err = err
-        self.totalError += err
-
-        # Update the output
-        self.alpha = curr_alpha
 
         if self.debug:
             print('PID error={0:4.3f} total_error={1:4.3f} dif_error={2:4.3f} '
