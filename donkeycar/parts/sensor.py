@@ -55,7 +55,7 @@ class Odometer:
             self._avg = self._weight * diff + (1.0 - self._weight) * self._avg
             self._distance += 1
             # only for debug
-            current_state = self._pi.read(self.gpio)
+            current_state = self._pi.read(self._gpio)
             self._debug_data['lo' if current_state == 0 else 'hi'] = diff
         self._last_tick = tick
 
