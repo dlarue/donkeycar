@@ -35,6 +35,7 @@ class Odometer:
         self._debug = debug
         self._run_counter = 0
         self._debug_data = dict(lo=[], hi=[])
+        self._last_lo = None
 
         # pigpio callback mechanics
         self._pi.set_pull_up_down(self._gpio, pigpio.PUD_UP)
@@ -56,7 +57,11 @@ class Odometer:
             self._distance += 1
             # only for debug
             current_state = self._pi.read(self._gpio)
-            self._debug_data['lo' if current_state == 0 else 'hi'].append(diff)
+            if current_state == 0:
+                self._last_lo = diff
+            else:
+                self._debug_data['lo'].append(self._last_lo)
+                self._debug_data['hi'].append(diff)
         self._last_tick = tick
 
     def run(self):
