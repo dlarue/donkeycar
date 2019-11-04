@@ -75,7 +75,6 @@ class PIDController:
         # debug flag (set to True for console output)
         self.debug = debug
         self.last_alpha = 0.0
-        self.weight = 0.02
 
     def run(self, err):
         curr_tm = time.time()
@@ -106,8 +105,6 @@ class PIDController:
                   'output={3:4.3f}'
                   .format(err, self.totalError, self.difError, curr_alpha))
 
-        curr_alpha \
-            = self.weight * curr_alpha + (1.0 - self.weight) * self.last_alpha
         self.last_alpha = curr_alpha
         return curr_alpha
 
