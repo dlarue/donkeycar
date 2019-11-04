@@ -5,7 +5,9 @@ Classes for sensory information.
 """
 from prettytable import PrettyTable
 import time
-
+from json import dump
+from os.path import join
+from os import getcwd
 
 class Odometer:
     """
@@ -32,6 +34,7 @@ class Odometer:
         self._distance = 0
         self._debug = debug
         self._run_counter = 0
+        self._debug_data = dict(lo=[], hi=[])
 
         # pigpio callback mechanics
         self._pi.set_pull_up_down(self._gpio, pigpio.PUD_UP)
@@ -51,6 +54,9 @@ class Odometer:
             diff = pigpio.tickDiff(self._last_tick, tick)
             self._avg = self._weight * diff + (1.0 - self._weight) * self._avg
             self._distance += 1
+            # only for debug
+            current_state = self.pi.read(self.gpio)
+            self._debug_data['lo' if current_state == 0 else 'hi'] = diff
         self._last_tick = tick
 
     def run(self):
@@ -80,6 +86,9 @@ class Odometer:
                       float(self._distance) / float(self._tick_per_meter)))
         if self._debug:
             print('Total num ticks {}'.format(self._distance))
+            path = join(getcwd(), 'odo.json')
+            with open(path, "w") as outfile:
+                dump(self._debug_data, outfile, indent=4)
 
 
 class LapTimer:
