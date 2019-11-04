@@ -34,7 +34,7 @@ class Odometer:
         self._distance = 0
         self._debug = debug
         self._run_counter = 0
-        self._debug_data = dict(lo=[], hi=[])
+        self._debug_data = dict(tick=[])
         self._last_lo = None
 
         # pigpio callback mechanics
@@ -55,13 +55,8 @@ class Odometer:
             diff = pigpio.tickDiff(self._last_tick, tick)
             self._avg = self._weight * diff + (1.0 - self._weight) * self._avg
             self._distance += 1
-            # only for debug
-            current_state = self._pi.read(self._gpio)
-            if current_state == 0:
-                self._last_lo = diff
-            else:
-                self._debug_data['lo'].append(self._last_lo)
-                self._debug_data['hi'].append(diff)
+            if self._debug:
+                self._debug_data['tick'].append(diff)
         self._last_tick = tick
 
     def run(self):
@@ -75,7 +70,7 @@ class Odometer:
             speed = 1.0e6 / (self._avg * self._tick_per_meter)
             self._max_speed = max(self._max_speed, speed)
         self._last_tick_speed = self._last_tick
-        if self._debug and self._run_counter % 20 == 0:
+        if self._debug and self._run_counter % 1 == 0:
             print("Speed =", speed)
         self._run_counter += 1
         return speed
