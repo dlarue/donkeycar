@@ -75,7 +75,7 @@ class PIDController:
         # debug flag (set to True for console output)
         self.debug = debug
         self.last_alpha = 0.0
-        self.weight = 0.1
+        self.weight = 0.02
 
     def run(self, err):
         curr_tm = time.time()
