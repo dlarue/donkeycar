@@ -56,7 +56,7 @@ class Odometer:
             self._distance += 1
             # only for debug
             current_state = self._pi.read(self._gpio)
-            self._debug_data['lo' if current_state == 0 else 'hi'] = diff
+            self._debug_data['lo' if current_state == 0 else 'hi'].append(diff)
         self._last_tick = tick
 
     def run(self):
