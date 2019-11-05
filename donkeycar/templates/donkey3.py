@@ -121,7 +121,7 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None, verbose=False):
     # drive by pid w/ speed
     if use_pid:
         # add pid controller to convert throttle value into speed
-        pid = PIDController(p=cfg.PID_P, i=cfg.PID_I, d=cfg.PID_D, debug=False)
+        pid = PIDController(p=cfg.PID_P, i=cfg.PID_I, d=cfg.PID_D, weight=0.1, debug=False)
         car.add(pid, inputs=[speed, 'car/speed'], outputs=['throttle'])
 
     # create the PWM throttle controller for esc
