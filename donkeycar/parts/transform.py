@@ -76,7 +76,9 @@ class PIDController:
         self.debug = debug
         self.last_alpha = 0.0
 
-    def run(self, err):
+    def run(self, setpoint, feedback):
+        # Error and time calculation
+        err = feedback - setpoint
         curr_tm = time.time()
         # Calculate time differential.
         dt = curr_tm - self.prev_tm

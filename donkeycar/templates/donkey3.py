@@ -116,19 +116,13 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None, verbose=False):
                 inputs=['user/mode', 'user/' + var, 'pilot/' + var],
                 outputs=[var])
 
+    # use pid either for rc control output or for ai output
+    speed = 'speed' if model_path is not None else 'user/speed'
     # drive by pid w/ speed
     if use_pid:
-        class PidError:
-            def run(self, car_speed, user_speed):
-                return car_speed - user_speed
-
-        # use pid either for rc control output or for ai output
-        speed = 'speed' if model_path is not None else 'user/speed'
-        car.add(PidError(), inputs=['car/speed', speed], outputs=['pid/error'])
-
         # add pid controller to convert throttle value into speed
         pid = PIDController(p=cfg.PID_P, i=cfg.PID_I, d=cfg.PID_D, debug=False)
-        car.add(pid, inputs=['pid/error'], outputs=['throttle'])
+        car.add(pid, inputs=[speed, 'car/speed'], outputs=['throttle'])
 
     # create the PWM throttle controller for esc
     throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL)
@@ -166,6 +160,10 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None, verbose=False):
         inputs = ['cam/image_array', 'user/angle', 'user/throttle',
                   'car/speed', 'car/lap', 'timestamp']
         types = ['image_array', 'float', 'float', 'float', 'int', 'str']
+        # add debug output to tub
+        if verbose and use_pid:
+            inputs += [speed, 'throttle']
+            types += ['float', 'float']
         # multiple tubs
         tubh = TubHandler(path=cfg.DATA_PATH)
         tub = tubh.new_tub_writer(inputs=inputs,
