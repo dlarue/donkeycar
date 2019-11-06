@@ -121,7 +121,7 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None, verbose=False):
     # drive by pid w/ speed
     if use_pid:
         # add pid controller to convert throttle value into speed
-        pid = PIDController(p=cfg.PID_P, i=cfg.PID_I, d=cfg.PID_D, weight=0.1, debug=False)
+        pid = PIDController(p=cfg.PID_P, i=cfg.PID_I, d=cfg.PID_D, debug=False)
         car.add(pid, inputs=[speed, 'car/speed'], outputs=['throttle'])
 
     # create the PWM throttle controller for esc
@@ -217,7 +217,7 @@ def calibrate(cfg):
                                       'user/throttle', 'user/throttle_on',
                                       'user/wiper', 'user/wiper_on'])
     # run the vehicle at 5Hz to keep network traffic down
-    donkey_car.start(rate_hz=5, max_loop_count=cfg.MAX_LOOPS)
+    donkey_car.start(rate_hz=10, max_loop_count=cfg.MAX_LOOPS)
 
 
 if __name__ == '__main__':

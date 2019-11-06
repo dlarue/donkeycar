@@ -60,7 +60,7 @@ class PIDController:
         https://github.com/chrisspen/pid_controller/blob/master/pid_controller/pid.py
     """
 
-    def __init__(self, p=0, i=0, d=0, weight=1.0, debug=False):
+    def __init__(self, p=0, i=0, d=0, debug=False):
 
         # initialize gains
         self.Kp = p
@@ -75,7 +75,6 @@ class PIDController:
         # debug flag (set to True for console output)
         self.debug = debug
         self.last_alpha = 0.0
-        self.weight = weight
 
     def run(self, setpoint, feedback):
         # Error and time calculation
@@ -97,7 +96,7 @@ class PIDController:
 
         # Add differential component (avoiding divide-by-zero).
         if dt > 0:
-            curr_alpha += -self.Kd * dif_error / float(dt)
+            curr_alpha += self.Kd * dif_error / float(dt)
 
         # Maintain memory for next loop.
         self.prev_tm = curr_tm
@@ -107,9 +106,6 @@ class PIDController:
             print('PID error={0:4.3f} total_error={1:4.3f} dif_error={2:4.3f} '
                   'output={3:4.3f}'
                   .format(err, self.totalError, self.difError, curr_alpha))
-
-        if self.weight != 1.0:
-            curr_alpha += (1.0 - self.weight) * (self.last_alpha - curr_alpha)
 
         self.last_alpha = curr_alpha
         return curr_alpha
