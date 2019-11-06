@@ -12,6 +12,7 @@ Options:
 """
 
 from docopt import docopt
+from simple_pid import PID
 
 import donkeycar as dk
 from donkeycar.parts.camera import PiCamera
@@ -21,7 +22,6 @@ from donkeycar.parts.datastore import TubWiper, TubHandler
 from donkeycar.parts.clock import Timestamp
 from donkeycar.parts.transform import PIDController
 from donkeycar.parts.sensor import Odometer, LapTimer
-
 from donkeycar.utils import normalize_and_crop
 
 
@@ -121,7 +121,16 @@ def drive(cfg, use_pid=False, no_cam=False, model_path=None, verbose=False):
     # drive by pid w/ speed
     if use_pid:
         # add pid controller to convert throttle value into speed
-        pid = PIDController(p=cfg.PID_P, i=cfg.PID_I, d=cfg.PID_D, debug=False)
+        # pid = PIDController(p=cfg.PID_P, i=cfg.PID_I, d=cfg.PID_D, debug=False)
+        class PidController:
+            def __init__(self):
+                self.pid = PID(Kp=cfg.PID_P, Ki=cfg.PID_I, Kd=cfg.PID_D)
+
+            def run(self, set_point, feedback):
+                self.pid.setpoint = set_point
+                return self.pid(feedback)
+
+        pid = PidController()
         car.add(pid, inputs=[speed, 'car/speed'], outputs=['throttle'])
 
     # create the PWM throttle controller for esc
