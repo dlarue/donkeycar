@@ -152,5 +152,6 @@ With the cover on, there is no way any dirt or water can get into the electronic
 1. The ESC and the motor are both specified for 3S so I could run the car at more power. Will try.
 
 1. The spur gear is made of plastic and I chewed through already 2 of those. I had ordered a metal one from Ebay some months ago but it never showed up. I believe I will need a metal drivetrain throughout.
+NOTE: verify spur gear is lined up properly, might need alignment using this technique: https://www.youtube.com/watch?v=W_q0FRJMvM0
 
 1. I will probably also fit some sort of mini OLED display for showing battery charge and processor temperature or similar.
